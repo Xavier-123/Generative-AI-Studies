@@ -82,7 +82,7 @@ Q1：[模型上下文限制为什么催生 Agent？](https://chatgpt.com/share/6
 
 ## 3.1 核心理论
 
-### **经典架构拆解**
+### **3.1.1 经典架构拆解**
 
 #### CoT/GoT
 
@@ -102,17 +102,24 @@ GoT让模型：
 
 #### Self-Ask
 
-核心思想：自动问题分解，模型先问自己问题。
+**Self-Ask**（自问）是一种提示工程（Prompt Engineering）技术，旨在让大语言模型通过**显式地提出并回答自己的中间问题**，来逐步推导出最终答案。
 
-
+它的核心思想是模仿人类的思考过程：当面对复杂问题时，人们会先拆解出子问题，自言自语地逐个解答，然后综合得出最终结论。
 
 
 
 #### Plan&Solve
 
+核心逻辑就是：
+
+1. **Plan**：让大模型先制定解决问题的步骤
+2. **Solve**：让大模型按照步骤执行，最终给出答案
+
 
 
 #### Reflexion
+
+核心逻辑：**大模型先生成初步答案 → 自我反思检查错误 → 基于反思修正答案**（一轮 Reflexion 迭代）
 
 
 
@@ -147,17 +154,13 @@ GoT让模型：
 
 
 
-#### AutoGPT、BabyAGI、OpenAI Agent 框架设计思路
-
-
-
-### **三大核心模块**
+### **3.1.2 三大核心模块**
 
 - **工具调用（Function Calling）**：函数描述构造、参数校验、错误重试、多工具串联；
 - **记忆系统 Memory**：短时上下文记忆、向量库长期记忆（RAG+Agent 结合）、分层记忆；
 - **规划 Planning**：任务拆解（子任务拆分）、动态纠错、多轮迭代重规划。
 
-### **Agent 常见痛点**
+### **3.1.3 Agent 常见痛点**
 
 #### 	一、 幻觉（Hallucination）
 
@@ -265,6 +268,16 @@ GoT让模型：
 
 
 ### OpenClaw
+
+
+
+#### 常见问题
+
+Q1：AutoGPT、BabyAGI、OpenAI Agent 框架设计思路
+
+```
+AutoGPT解决的是“让模型自主行动”，BabyAGI解决的是“让模型管理任务”，而OpenAI Agent解决的是“让模型可靠地调用工具并完成业务流程”。
+```
 
 
 
@@ -645,11 +658,68 @@ Qwen：Qwen3-Reranker
 
 ------
 
+## 3.5 Context Engineering
+
+上下文工程（Context Engineering）这是2026年越来越火的方向。
+
+核心思想：如何在有限上下文窗口内，为模型动态构造“最有价值的输入环境（Context）”。
 
 
-## 3.5 Prompt Engineering
 
-### 高频问题
+### 3.5.1 Prompt Engineering
+
+**提示词工程**，就是**设计、优化、调试给大语言模型的输入指令（Prompt / 提示词）**，在**不改动模型本身**的前提下，让 AI 精准按照你的要求输出结果的技术与方法。
+
+
+
+#### 自动提示词优化
+
+自动提示词优化（Automated Prompt Optimization, APO）
+
+##### 1. 为什么需要 APO？
+
+在日常开发中，传统的提示词工程通常由人类工程师手动完成：
+
+1. **耗时且效率低**：改一个词，需要重新测试成百上千条数据。
+2. **容易“拆东墙补西墙”**：你为了解决 Case A 修改了提示词，结果却导致原本正确的 Case B 和 Case C 报错了。
+3. **不可迁移**：当你把底层大模型从 GPT-4 换成 Claude 时，原本精雕细琢的提示词可能直接失效，所有工作又得重来。
+
+APO 的出现，就是为了把这种“手工业”变成类似于传统机器学习的“工业化训练”。
+
+
+
+##### 2. APO 是如何工作的？
+
+APO 的核心思想是**将机器学习中的“模型训练（梯度下降）”逻辑套用在文本上**。它将提示词视为“待训练的参数”，通过以下循环自动迭：
+
+1. **准备数据集（Dataset）**：包含输入数据（如“请翻译这句话”）和标准答案（Ground Truth）。
+2. **运行与评估（Loss Function）**：使用初始提示词在数据集上运行，用算法（或另一个 LLM 裁判）评估输出质量，找出出错的案例（Bad Cases）[[1](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFer6wRI4G9cKs0qiThNp_8p-VeIMJBw7t_bAK02JhorQOIBEjaHuhTk1ivRYY1gxvMqKC1IKTS9E50BqSCMqHLtWBvA2k4Y15qj_ZdJk5bSQLVyeBIga2mobwPIDNB_LX9tIOIbhLbhBIP9jEsDsVw3HDL3WCJkUoM3P9ropwY-FwjEHAw3-h3jvSm5rtYgqksYEKUEacw)]。
+3. **错误分析（Gradient/梯度）**：让一个“评判大模型”分析这些出错的案例，生成自然语言形式的诊断报告（例如：“当前提示词没有明确规定输出格式，导致大模型输出了多余解释”）。这在 APO 中被称为**“文本梯度”（Textual Gradient）**。
+4. **生成候选提示词（Optimizer）**：让一个“优化大模型”根据诊断报告，修改并生成几个新的候选提示词。
+5. **筛选与迭代（Selection）**：在验证集上测试这些新的候选提示词，保留表现最好的一个（或使用束搜索 Beam Search 等算法保留前几名），然后进入下一轮迭代，直到性能达到瓶颈。
+
+
+
+##### 3. 代表性的 APO 技术
+
+在学术界和工业界，目前有几种主流的 APO 实现方案：
+
+- **APO / [PromptWizard](https://github.com/microsoft/PromptWizard) (微软)**：提出使用自然语言“梯度”来批评当前的提示词，并在语义相反的方向上自动重写提示词。
+- **OPRO (Google DeepMind)**：将大模型作为优化器（LLMs as Optimizers）。它在 prompt 中展示历史尝试过的提示词及其对应的得分，让大模型根据这些“历史轨迹”自动推导出得分更高的新提示词。
+- **DSPy (斯坦福)**：将提示词工程转变为“声明式编程”。你只需要定义输入输出，DSPy 的编译器（Compiler）会自动帮你优化提示词、自动挑选最合适的 Few-shot 示例，完全避开手动写 Prompt 的过程。
+- **TextGrad (斯坦福)**：将上述过程进一步泛化。它不仅能优化 Prompt，还能自动优化代码和文本答案，把整个 LLM 系统的优化做得像 PyTorch 的自动求导一样系统化。
+
+
+
+##### 4. APO 的优势
+
+- **数据驱动**：提示词的优化结果完全基于真实测试集的反馈，避免了人类的主观偏好。
+- **抗回归（Regression-proof）**：在迭代过程中，系统会确保新的提示词在整个数据集上的综合表现变好，而不会因为解决了一个新 Bug 而引入三个旧 Bug。
+- **自动化适配大模型**：当企业更换底层模型时，只需把新模型接入 APO 管道，重新跑一遍自动化优化流程，就能在几小时内得到一套最契合新模型的提示词。
+
+
+
+##### 高频问题
 
 #### Q1：prompt优化
 
@@ -660,29 +730,241 @@ Qwen：Qwen3-Reranker
 （4）边界条件说明：比如 不知道时输出：UNKNOWN，不要编造信息
 ```
 
-#### Q2：ReAct
 
-```
-
-```
-
-
-
-### 重点：
-
-- ReAct
-- Chain of Thought
-- Self Reflection
-- Self Consistency
-- Tree of Thoughts
 
 ------
 
 
 
-## 3.6 上下文工程
+### 3.5.2 Context Selection
 
-上下文工程（Context Engineering）这是2026年越来越火的方向。
+核心问题：
+
+> 哪些信息应该放进上下文？
+
+常见方法：
+
+#### Rule-Based
+
+```
+保留最近10轮
+```
+
+#### Embedding Retrieval
+
+```
+query_embedding → TopK Similar Context
+```
+
+#### LLM Selection
+
+```
+让LLM决定保留哪些内容
+```
+
+
+
+------
+
+
+
+### 3.5.3 Context Compression
+
+常见方法：
+
+#### Summarization
+
+```
+100轮对话 → 摘要
+```
+
+#### Semantic Compression
+
+```
+保留结论
+删除冗余细节
+```
+
+#### Structured Compression
+
+主要解决大语言模型（LLM）在处理**长上下文、多轮对话**时的三个痛点：
+
+- **超出上下文窗口**：几轮对话后Token过多导致模型“忘记”开头。结构化压缩后，长对话被精简为几十个Token的关键字段。
+- **注意力分散**：原始对话中充斥“嗯…那个…刚才你说的……”等噪声。提取JSON结构能引导模型直接聚焦于`intent`和`constraint`，提升任务成功率。
+- **成本与延迟**：压缩后的JSON输入比原始长文本短得多，能显著降低API调用成本和响应延迟。
+
+```python
+{
+  "intent": "...",
+  "constraint": "...",
+  "history": "..."
+}
+
+# 原始输入（啰嗦，约80 Token）：
+用户A：“嗨，你好，我想了解一下，就是……呃……我下周可能要去上海，你知道的，上海天气怎么样？哦对了，顺便问一下，去那边需不需要带伞啊？大概下周三的样子。”
+助手：“好的，请问是下周三吗？”
+用户A：“对对对，就是下周三。”
+
+# 结构化压缩后（仅约20 Token）：
+{
+  "intent": "查询天气",
+  "constraint": {"地点": "上海", "时间": "下周三", "关注点": ["是否需要带伞"]},
+  "history": "用户确认时间为下周三"
+}
+```
+
+典型框架：
+
+- MemGPT
+- LangGraph Memory
+- Claude Memory
+
+------
+
+
+
+### 3.5.4  Retrieval Engineering
+
+RAG实际上属于Context Engineering的重要组成部分。
+
+常见方法：
+
+#### Query Rewrite
+
+用户：
+
+```
+它什么时候发布的？
+```
+
+改写：
+
+```
+GPT-5什么时候发布？
+```
+
+#### Retrieval
+
+```
+BM25
+Dense Retrieval
+Hybrid Search
+Graph Retrieval
+```
+
+#### Rerank
+
+```
+Top50 → Top5
+```
+
+
+
+#### Context Packing
+
+把检索结果组织进Prompt。
+
+------
+
+### 3.5.5 Memory Engineering
+
+记忆工程，Agent最重要的能力之一。
+
+#### Short-term Memory
+
+- **工作记忆 / 短期记忆**
+- **定义**：Agent 当前正在进行的任务链条中所必需的即时信息（例如正在运行的代码片段、当前的子目标）。
+- **技术实现**：通常直接驻留在 LLM 当前的上下文窗口中，生命周期较短，任务结束即释放。
+
+
+
+#### Conversational Memory
+
+- **对话记忆**
+- **定义**：单次或跨会话（Session）中，用户与 Agent 之间的聊天历史记录。
+- **技术实现**：SQL 关系表、NoSQL 键值对，通过滑动窗口（Sliding Window）或自动摘要（Summary）在输入时动态压缩和加载。
+
+
+
+#### Episodic Memory
+
+- **情景记忆**
+- **定义**：记录“过去发生了什么”。它保存了 Agent 的历史行为轨迹、调用过的工具日志（Tool Logs）、执行成败以及从中获得的反馈（即“前车之鉴”）。
+- **技术实现**：利用事件溯源（Event Sourcing）设计，通过时间戳、成功/失败标签将每一次的执行轨迹序列化保存，支持相似任务场景下的少样本检索（Few-shot Retrieval）。
+
+
+
+#### Semantic Memory
+
+- **语义记忆**
+- **定义**：Agent 掌握的静态或相对持久的事实、概念与常识（即 RAG 所依赖的外部知识库）。
+- **技术实现**：向量数据库、混合检索系统（Hybrid Search）。
+
+
+
+#### Procedural Memory
+
+- **程序记忆 / 工作流与工具记忆**
+- **定义**：关于“如何做一件事”的记忆。包括 Agent 需要遵循的具体操作规程、业务流，以及它所拥有的工具箱定义（Toolbox）。
+- **技术实现**：动态工具检索系统。当 Agent 拥有成百上千个 API 时，不应把所有工具描述直接丢进 Prompt，而是将工具定义存储在数据库中，由 Agent 动态语义检索并加载当前需要的工具。
+
+
+
+#### Entity Memory
+
+- **实体记忆**
+- **定义**：关于特定人、项目、系统或对象的结构化事实（例如：用户 A 喜欢用 Python、项目 B 的截止日期是明天）。
+- **技术实现**：通常使用图数据库（Knowledge Graph）或带有 Vector 扩展的关系型 SQL 表，用于维护高度结构化的属性关联。
+
+
+
+
+
+### 3.5.6 Tool Context Engineering
+
+工具上下文工程，Agent大量依赖Tool。
+
+核心问题：
+
+> Tool结果如何注入上下文？
+
+#### Tool Description
+
+#### Tool Output Formatting
+
+#### Tool Routing
+
+#### Function Calling Schema
+
+
+
+### 3.5.7 Agent Planning Context
+
+规划上下文，Agent决策依赖上下文。
+
+#### ReAct
+
+#### Plan-and-Solve
+
+#### Reflexion
+
+#### Tree of Thoughts
+
+
+
+### 3.5.8 Context Optimization
+
+（上下文优化）
+
+#### Token Budget Allocation
+
+#### Context Ranking
+
+#### Dynamic Context
+
+
+
+
 
 你最近一直在研究：
 
@@ -729,13 +1011,7 @@ Qwen：Qwen3-Reranker
 
 
 
-- 
-
-------
-
-
-
-## 3.7 Agent评测
+## 3.6 Agent评测
 
 这是很多候选人的短板。
 
@@ -771,7 +1047,7 @@ Qwen：Qwen3-Reranker
 
 
 
-## 3.8 Agentic RL
+## 3.7 Agentic RL
 
 Search-R1
 
@@ -785,13 +1061,11 @@ DeepResearcher
 
 
 
-## 3.9 Multi-Agent
+## 3.8 Multi-Agent
 
 
 
 ------
-
-
 
 # 四、部署
 
