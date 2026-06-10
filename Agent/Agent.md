@@ -4,13 +4,65 @@
 
 ### Transformer 原理
 
-```
+Transformer 用 Self-Attention 替代了 RNN 的递归结构，使每个 Token 都能够直接关注序列中的所有 Token，从而解决长距离依赖问题并实现并行训练。其核心由 Multi-Head Attention、Position Encoding、Feed Forward Network、Residual Connection 和 LayerNorm 构成。Encoder 负责理解输入，Decoder 负责自回归生成文本，而现代大语言模型（GPT、Llama、Qwen等）大多采用 Decoder-Only 架构，通过预测下一个 Token 完成预训练和生成任务。
+
+Transformer的核心思想：
+
+> 不要一步一步传递信息。
+>
+> 让每个Token直接看到所有Token。
+
+Self-Attention到底是什么
+
+
+
+Attention怎么计算
+
+
+
+Self-Attention直观理解
+
+
+
+Multi-Head Attention
+
+
+
+为什么需要Position Encoding
+
+
+
+Transformer整体结构
+
+
+
+Encoder做什么
+
+
+
+Decoder做什么
+
+
+
+Feed Forward是什么
+
+
+
+为什么LLM只保留Decoder
+
+
+
+为什么除以√dk
 
 ```
 
+```
 
 
-### 注意力变体（MQA/GQA/MLA）
+
+### 注意力变体（⭐）
+
+MQA / GQA / MLA
 
 ```
 
@@ -32,7 +84,7 @@
 
 # 二、微调
 
-## LLM 微调
+## LLM 微调（⭐⭐）
 
 微调体系：SFT、RLHF、DPO、ORPO、RM 训练逻辑，全参 / LoRA/QLoRA 微调适用场景；
 
@@ -53,14 +105,17 @@
 - **Agent 专有微调：** 了解如何通过微调（SFT）提升模型在特定 Agent 任务上的表现（例如提升 Function Calling 的准确率、提高遵循复杂格式的能力）。
 - **基于强化学习的 Agent 训练（RL for Agent）**
 
-### 框架：
+### 框架
 
 - [LLaMA Factory](https://llamafactory.readthedocs.io/?utm_source=chatgpt.com)
 - [TRL](https://huggingface.co/docs/trl/index?utm_source=chatgpt.com)
+- swift
+- unsloth
+- verl
 
 
 
-## Embedding / Reranker 微调
+## Embedding / Reranker 微调（⭐）
 
 
 
@@ -80,7 +135,7 @@ Q1：[模型上下文限制为什么催生 Agent？](https://chatgpt.com/share/6
 
 
 
-## 3.1 核心理论
+## 3.1 核心理论（⭐⭐）
 
 ### **3.1.1 经典架构拆解**
 
@@ -471,18 +526,18 @@ Tool Description > Tool Routing > Few-shot > JSON Schema > SFT
 
 
 
-## 3.4 RAG
+## 3.4 RAG（⭐）
 
 
 
-### 文档解析
+### 3.4.1 文档解析
 
 - **痛点：** 如何解析复杂的 PDF、Word、PPT 格式？特别是双栏排版、表格（Table）、图片、OCR 识别。
 - **核心技术：** 布局分析（Layout Analysis，如 LayoutLM、PaddleOCR）、专门解析表格的工具（如 Table Transformer、Unstructured、PyMuPDF）。
 
 
 
-### Chunk策略
+### 3.4.2 Chunk策略
 
 Fixed Chunk (固定大小分块)
 
@@ -561,7 +616,7 @@ Hierarchical Chunk (层级分块)
 	长篇研究报告、整本书籍分析、复杂的合规性文档等需要兼顾宏观与微观视角的信息提取任务。
 ```
 
-### 检索增强
+### 3.4.3 检索增强
 
 查询变换与扩展
 
@@ -642,13 +697,11 @@ Qwen：Qwen3-Reranker
 
 
 
-### 向量数据库
+### 3.4.4 向量数据库
 
 - [Milvus](https://milvus.io/?utm_source=chatgpt.com)
 - [Qdrant](https://qdrant.tech/?utm_source=chatgpt.com)
 - [Weaviate](https://weaviate.io/?utm_source=chatgpt.com)
-
-
 
 ### 高频问题
 
@@ -658,7 +711,7 @@ Qwen：Qwen3-Reranker
 
 ------
 
-## 3.5 Context Engineering
+## 3.5 Context Engineering（⭐⭐）
 
 上下文工程（Context Engineering）这是2026年越来越火的方向。
 
@@ -1011,7 +1064,15 @@ Top50 → Top5
 
 
 
-## 3.6 Agent评测
+## 3.6 Harness Engineering（⭐⭐）
+
+
+
+------
+
+
+
+## 3.7 能力评测（⭐⭐）
 
 这是很多候选人的短板。
 
@@ -1024,6 +1085,85 @@ Top50 → Top5
 - **评估体系**：了解 AgentBench、GAIA 等主流评测集。
 - **Trace 分析**：如何追踪 Agent 的思考链路（Thought Trace），定位是推理错了、检索错了还是工具调错了。
 - **LLM-as-a-Judge**：使用更强的模型来自动评估 Agent 任务完成度的方法论。
+
+
+
+
+
+### 3.7.1  RAG能力评测
+
+RAG系统的评估通常分为两个核心部分：**检索阶段（Retrieval）\**和\**生成阶段（Generation）**。
+
+#### 1. 评估方法
+
+行业内目前最广为接受的评估方法是**RAG三元组（RAG Triad）框架**（由TruEra/TruLens率先提出）[[3](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFQb_W0s_DBLGHWL4jFw4f5xDM3TBAA3vpOxb1osVDyOzKbEiP0JeAOinfNnQkR2S20vlPKI8fZfnTj7juDyEPtrB20fwcBH_KpEV0yGjgkbN2AkUbL_VLw2hBgsC9gMILzA32rjvOKXnCLJxtQ5vBPFlC9VSlvxW8%3D)]，它将评估细化为三个维度：
+
+- **上下文相关性（Context Relevance）**：检索出来的文档片段是否真的与用户的提问相关？（评估检索器，避免引入无关噪声）[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]
+- **忠实度/幻觉度（Faithfulness / Groundedness）**：大模型生成的回答是否完全基于检索出来的上下文？有没有凭空捏造事实？（评估生成器，检测幻觉）
+- **回答相关性（Answer Relevancy）**：大模型最终的回答是否真正解答了用户的提问？[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]
+
+此外，还有以下传统和辅助评估指标：
+
+- **传统检索指标**：命中率（Hit Rate）、平均逆文档排名（MRR）、NDCG、召回率（Recall）等（用于独立调优向量数据库和检索算法）[[1](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEpnMLa4E3nXrGTjow_Rpnm15f3hPEljX9LIAZNPZXAcS2qkrpsm2kZx14BgAcHct4ZkZfPUQJVRS9NzRxxicUgRoBPOdZVIRUuX2uRvLlkHI4siQqo6rRHpoQsss7Ph1TH5lWFEKeWBkRSmGLAazGMO_zq)]。
+- **LLM-as-a-Judge（大模型作为裁判）**：使用能力更强的大模型（如 GPT-4）对生成质量进行语义层面的打分或成对比较（Pairwise Comparison）。
+
+#### 2. 主流评测工具
+
+- **Ragas (Retrieval Augmented Generation Assessment)**[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]
+  - **特点**：目前最流行的开源RAG评测框架。基于研究论文提出了一系列无参考（Reference-free）指标，无需人工标注的黄金标准（Golden Dataset）即可利用大模型对上下文精度、忠实度、回答相关性进行自动化打分[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]。
+- **DeepEval (Confident AI)**[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]
+  - **特点**：开源的LLM系统单元测试框架，完美兼容 Pytest[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]。它提供了丰富的RAG评估指标，并且由于其单元测试的属性，极易与CI/CD管道集成，适合在代码部署前进行回归测试。
+- **TruLens (Truera)**[[3](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFQb_W0s_DBLGHWL4jFw4f5xDM3TBAA3vpOxb1osVDyOzKbEiP0JeAOinfNnQkR2S20vlPKI8fZfnTj7juDyEPtrB20fwcBH_KpEV0yGjgkbN2AkUbL_VLw2hBgsC9gMILzA32rjvOKXnCLJxtQ5vBPFlC9VSlvxW8%3D)]
+  - **特点**：RAG三元组概念的鼻祖[[3](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFQb_W0s_DBLGHWL4jFw4f5xDM3TBAA3vpOxb1osVDyOzKbEiP0JeAOinfNnQkR2S20vlPKI8fZfnTj7juDyEPtrB20fwcBH_KpEV0yGjgkbN2AkUbL_VLw2hBgsC9gMILzA32rjvOKXnCLJxtQ5vBPFlC9VSlvxW8%3D)]。提供强大的可视化面板，能够直观地追踪哪一次查询的哪个环节（检索还是生成）出现了瓶颈，非常适合开发阶段的调试和调优。
+- **Arize Phoenix**
+  - **特点**：开源的LLM可观测性和评估平台[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]。支持OpenTelemetry协议（OTel-native），能够将检索到的文本转化为向量空间进行可视化（UMAP），方便定位检索“死角”[[3](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFQb_W0s_DBLGHWL4jFw4f5xDM3TBAA3vpOxb1osVDyOzKbEiP0JeAOinfNnQkR2S20vlPKI8fZfnTj7juDyEPtrB20fwcBH_KpEV0yGjgkbN2AkUbL_VLw2hBgsC9gMILzA32rjvOKXnCLJxtQ5vBPFlC9VSlvxW8%3D)]。
+- **LangSmith / Langfuse**
+  - **特点**：链路追踪（Tracing）领域的顶流工具。虽然它们本身是可观测性平台，但提供了强大的数据集管理、人工反馈收集和自动打分流程，对串联了多步检索的复杂RAG管道十分友好。
+- **Braintrust / Maxim AI**
+  - **特点**：企业级端到端评估和仿真平台，支持将生产环境中的真实数据回流转化为测试集，实现闭环评测。
+
+
+
+### 3.7.2 Agent能力评测
+
+相比RAG，Agent（智能体）的评估要复杂得多。Agent 通常涉及多轮对话、工具调用（Tool Use）、自我规划（Planning）以及外部环境交互。它的失败往往是组合性的（例如：即使每一步工具调用都正确，但整体逻辑推理错误，导致任务失败）[[9](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQHH3zV5XPTS031AmsWRMqpp8tez5_iotqefNuoU-KD8kZTtQXnyfZgNaFmWcMzHdL_vbRlsvDepA_ycBgXdHrl9k4SZWXvfN8EC-eNDn82MHb4dg3-dCVlNVSa_MxyCK1ZzwjdP4eZeL4HSVN4vXAI7D83iSVE0ZGGO5XCV5_2S_DQqh9Fb0CmmbgUJC3e3XKTN5jO9G9XILcCq3Q%3D%3D)]。
+
+#### 1. 评估方法
+
+- **轨迹评估（Trajectory & Trace Evaluation）**：不仅看最终结果，更要分析Agent决策路径中的每一步[[7](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQHcEdf9OJaRylSWyHWPgeBml8sTqo5XbsbZ26hkYS5r8rxmKrJ-mmnjcT5nxafdXz8t0clKwGce5LX849mUfvWYQt2H6_no_VNCpVvZQf-gqfNapLiEF2XugTwOIRdjgxK-o0BexRjtnWP1UyEiE3HI)]。例如：是否调用了正确的工具？传参是否正确？是否存在死循环或重复无意义尝试？
+- **任务成功率（Task Success Rate）**：端到端的通过率测试（Pass/Fail）。判断Agent在沙盒环境（如代码库、模拟网页）中操作后，是否达到了最终预期状态。
+- **效率与成本指标**：
+  - **执行步数（Steps）**：达到目标用了多少步？
+  - **消耗Token及费用（Cost）**：单次任务消耗了多少API费用[[11](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQELEAfwDL9FzlMOmSUAzfoYQVyayLHUMmAe9IwiCx4wrAA-R7zEcO6t5uHK3Id1IJJP4Opk6L7LJ0mYRg5AFIbzHV1knyEKijJ88PHB35mxuf3WCUrP0jkGGMYMp1eNvIHv0_5ZlAsXIPy79_ETf583N8GpNN46dhg6zifNeA%3D%3D)]？
+  - **时间（Latency）**：执行任务耗时多久？
+- **异常处理与纠错能力（Robustness）**：当遇到工具调用报错、网络超时或用户干扰时，Agent是否能够自我纠错并继续执行。
+
+#### 2. 评测基准（Benchmarks）
+
+在Agent评测中，高质量的测试集/模拟环境（基准）比单纯的工具更关键。目前业界公认的主流基准有：
+
+- **SWE-bench**：软件工程智能体基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。要求Agent在真实的、庞大的GitHub开源代码库中定位并解决真实的Issue[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。由于需要读写代码、运行测试，这是目前难度最高、最贴近生产环境的评测之一。
+- **GAIA (General AI Assistants)**：通用AI助手基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。包含各种需要多模态理解、长跨度推理、复杂工具使用（如查网页、读取PDF、运行Python脚本等）的实际生活与工作任务[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。
+- **WebArena / Mind2Web**：网页交互智能体基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。模拟真实网页环境（如电商、社交论坛、Gitlab等），评估Agent在网页端进行导航、搜索、下单等端到端操作的能力[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。
+- **BFCL (Berkeley Function-Calling Leaderboard)**：加州大学伯克利分校提出的函数调用基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。专门用来评估模型在单步/多步/并行工具调用、参数提取上的准确率，是智能体工具调用能力的“黄金标准”。
+- **AgentBench**：清华大学等机构提出的多维度评测框架，涵盖操作系统（OS）、数据库（DB）、网络浏览、卡牌游戏等八大虚拟交互环境[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。
+
+#### 3. 评测与可观测性工具
+
+由于Agent链路的非确定性，评测工具往往与可观测性追踪（Tracing）深度绑定：
+
+- **LangSmith (针对 LangGraph/LangChain 等)**
+  - **特点**：在评估多轮对话、多Agent协作（Multi-agent）和状态机工作流方面极具优势。它能清晰展现每个Agent的决策分支、记忆读取和工具交互 trace。
+- **DeepEval (Confident AI)**
+  - **特点**：引入了针对Agent的专项评估指标（如Tool Correctness），支持对带有有向无环图（DAG）结构的Agent工作流进行端到端回归测试，帮助团队在CI/CD阶段拦截有缺陷的Agent发布。
+- **Braintrust**
+  - **特点**：集成CI/CD的Agent测试工具，支持大规模高并发的Agent运行模拟，能将多次实验的评估指标与代码提交（PR）关联，适合工程化成熟度高的团队。
+- **W&B Weave / Comet Opik**
+  - **特点**：传统的机器学习实验追踪工具进军Agent领域的产品。提供零配置的Agent Tracing、提示词/参数优化器（Agent Optimizer）以及轻量级SLM（小语言模型）本地打分评估器。
+- **Galileo**
+  - **特点**：支持将离线测试与实时线上护栏（Guardrails）相结合。不仅在发布前评估Agent的轨迹合理性，还能在生产环境中监控Agent是否产生了死循环、越权工具调用或越轨行为。
+
+
 
 ### Offline Eval
 
@@ -1047,7 +1187,7 @@ Top50 → Top5
 
 
 
-## 3.7 Agentic RL
+## 3.8 Agentic RL（⭐）
 
 Search-R1
 
@@ -1061,9 +1201,17 @@ DeepResearcher
 
 
 
-## 3.8 Multi-Agent
+## 3.9 Multi-Agent（⭐）
 
+Here are the main patterns for building multi-agent systems, each suited to different use cases:
 
+| Pattern                                                      | How it works                                                 |
+| :----------------------------------------------------------- | :----------------------------------------------------------- |
+| [**Subagents**](https://docs.langchain.com/oss/python/langchain/multi-agent/subagents) | A main agent coordinates subagents as tools. All routing passes through the main agent, which decides when and how to invoke each subagent. |
+| [**Handoffs**](https://docs.langchain.com/oss/python/langchain/multi-agent/handoffs) | Behavior changes dynamically based on state. Tool calls update a state variable that triggers routing or configuration changes, switching agents or adjusting the current agent’s tools and prompt. |
+| [**Skills**](https://docs.langchain.com/oss/python/langchain/multi-agent/skills) | Specialized prompts and knowledge loaded on-demand. A single agent stays in control while loading context from skills as needed. |
+| [**Router**](https://docs.langchain.com/oss/python/langchain/multi-agent/router) | A routing step classifies input and directs it to one or more specialized agents. Results are synthesized into a combined response. |
+| [**Custom workflow**](https://docs.langchain.com/oss/python/langchain/multi-agent/custom-workflow) | Build bespoke execution flows with [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), mixing deterministic logic and agentic behavior. Embed other patterns as nodes in your workflow. |
 
 ------
 
@@ -1079,16 +1227,19 @@ Python 进阶：异步 asyncio、Pydantic（函数参数结构化，Function Cal
 
 
 
-## 4.1 LLM推理
+## 4.1 LLM推理优化（⭐）
 
 量化基础：FP8、GPTQ、AWQ，推理优化基础（vLLM/SGLang/PagedAttention），看懂推理链路。
 
-重点准备：
 
-### 推理框架
+
+## 4.2 服务端部署
 
 - [vLLM](https://docs.vllm.ai/?utm_source=chatgpt.com)
 - [SGLang](https://docs.sglang.ai/?utm_source=chatgpt.com)
+- mindie
+
+
 
 面试高频：
 
@@ -1097,6 +1248,31 @@ Python 进阶：异步 asyncio、Pydantic（函数参数结构化，Function Cal
 - Continuous Batching
 - Paged Attention
 - Speculative Decoding
+
+
+
+## 4.2 端侧部署
+
+### 1. ONNX Runtime Mobile (ORT Mobile)
+
+- 定位：**跨平台端侧推理首选**，适配 Android/iOS/ 车机 Linux，支持 ONNX 模型
+- 优势：体积小、功耗低、算子优化成熟，支持 CPU/GPU/NPU 异构加速
+- 适用：绝大多数轻量 LLM、多模态模型，工程落地最稳
+- 场景：手机 APP、常规车机座舱
+
+### 2. TensorFlow Lite (TFLite / TFLite Micro)
+
+- 定位：谷歌端侧推理框架，分标准版 + 微型版
+- 优势：生态完善、编译简单，TFLite Micro 适配**极低算力 MCU / 低配车机**
+- 局限：大 LLM 算子支持偏弱，更适合小模型、CV、语音
+- 场景：低端车机、物联网终端、嵌入式设备
+
+### 3. llama.cpp（现象级开源）
+
+- 核心：纯 C/C++ 实现，无依赖，极致轻量化
+- 亮点：支持 GGUF/GGML 量化（4bit/8bit）、CPU/GPU 加速，跨平台无敌
+- 适配：Android、iOS、Linux 车机、嵌入式 Linux，**车载 / 移动端离线 LLM 首选**
+- 用法：可封装 JNI/OC 接口集成进 APP、车机应用，社区模型最全
 
 
 
@@ -1114,11 +1290,9 @@ Python 进阶：异步 asyncio、Pydantic（函数参数结构化，Function Cal
 
 ## CodeAct
 
-PlanAct
 
 
-
-## Skills
+## Skills（⭐）
 
 
 
