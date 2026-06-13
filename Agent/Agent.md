@@ -1111,16 +1111,20 @@ RAG系统的评估通常分为两个核心部分：**检索阶段（Retrieval）
 
 - **Ragas (Retrieval Augmented Generation Assessment)**[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]
   - **特点**：目前最流行的开源RAG评测框架。基于研究论文提出了一系列无参考（Reference-free）指标，无需人工标注的黄金标准（Golden Dataset）即可利用大模型对上下文精度、忠实度、回答相关性进行自动化打分[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]。
+  
 - **DeepEval (Confident AI)**[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]
   - **特点**：开源的LLM系统单元测试框架，完美兼容 Pytest[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]。它提供了丰富的RAG评估指标，并且由于其单元测试的属性，极易与CI/CD管道集成，适合在代码部署前进行回归测试。
+  
 - **TruLens (Truera)**[[3](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFQb_W0s_DBLGHWL4jFw4f5xDM3TBAA3vpOxb1osVDyOzKbEiP0JeAOinfNnQkR2S20vlPKI8fZfnTj7juDyEPtrB20fwcBH_KpEV0yGjgkbN2AkUbL_VLw2hBgsC9gMILzA32rjvOKXnCLJxtQ5vBPFlC9VSlvxW8%3D)]
   - **特点**：RAG三元组概念的鼻祖[[3](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFQb_W0s_DBLGHWL4jFw4f5xDM3TBAA3vpOxb1osVDyOzKbEiP0JeAOinfNnQkR2S20vlPKI8fZfnTj7juDyEPtrB20fwcBH_KpEV0yGjgkbN2AkUbL_VLw2hBgsC9gMILzA32rjvOKXnCLJxtQ5vBPFlC9VSlvxW8%3D)]。提供强大的可视化面板，能够直观地追踪哪一次查询的哪个环节（检索还是生成）出现了瓶颈，非常适合开发阶段的调试和调优。
+  
 - **Arize Phoenix**
   - **特点**：开源的LLM可观测性和评估平台[[2](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQEvytduq4E5bK53IMocOs_doc3KM-hMVh0M32xI30_3vHA9Iv6FPzZVuaxSNk9oO_rQwPKvGazVuc3Ad8E53shCxc4b_JNcBuHb5JMpRiYWHWkynLrgEyT6Y1x8y1InrldoQ6PAkFZEt4wCWeR1vGNEnD0uDX-ECUCYLePJMGeicXxtCFOvDbrVqj0aWVZPYw%3D%3D)]。支持OpenTelemetry协议（OTel-native），能够将检索到的文本转化为向量空间进行可视化（UMAP），方便定位检索“死角”[[3](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQFQb_W0s_DBLGHWL4jFw4f5xDM3TBAA3vpOxb1osVDyOzKbEiP0JeAOinfNnQkR2S20vlPKI8fZfnTj7juDyEPtrB20fwcBH_KpEV0yGjgkbN2AkUbL_VLw2hBgsC9gMILzA32rjvOKXnCLJxtQ5vBPFlC9VSlvxW8%3D)]。
+  
 - **LangSmith / Langfuse**
   - **特点**：链路追踪（Tracing）领域的顶流工具。虽然它们本身是可观测性平台，但提供了强大的数据集管理、人工反馈收集和自动打分流程，对串联了多步检索的复杂RAG管道十分友好。
-- **Braintrust / Maxim AI**
-  - **特点**：企业级端到端评估和仿真平台，支持将生产环境中的真实数据回流转化为测试集，实现闭环评测。
+  
+  
 
 
 
@@ -1338,9 +1342,16 @@ Python 进阶：异步 asyncio、Pydantic（函数参数结构化，Function Cal
 
 ##### 简历版
 
-项目名称：[对话数据标注自进化Agent系统](
+```
+
+```
+
+
 
 ##### 模拟面试
+
+```
+https://chatgpt.com/c/6a2d55bd-b3a8-83ea-9608-e0771a9229e3
 
 项目名称：[对话数据标注自进化Agent系统](https://chatgpt.com/c/6a2a4aff-22ac-83ea-bdf4-3631c4dbf48d)
 
@@ -1372,6 +1383,8 @@ Python 进阶：异步 asyncio、Pydantic（函数参数结构化，Function Cal
 - **具备鲁棒的自诊断与偏差发现能力**：在“质检分类”等未见明显指标提升的复杂场景中，利用系统的“易错类别发现 Agent”与自评估机制，主动诊断并定位出评估数据源自身存在的标注偏差，避免了算法盲目拟合噪声，验证了系统评估体系的客观性与严谨性。
 - **标注效率跃升与人工降本**：通过全自动化的 Prompt 与经验库迭代流程，将策略调优周期由传统人工的**数天缩短至小时级**；大幅减少了标注过程中的人工干预和校验频次，显著提升了海量数据的整体标注吞吐量。
 - **高工程性能与泛化扩展性**：通过引入动态经验库压缩机制，单次推理延迟增量控制在极低水平（毫秒级），满足高并发标注的性能要求；系统分层架构具备良好扩展性，可无缝复用至 RAG、Agent 等更复杂的上下文学习（In-Context Learning）场景。
+
+```
 
 
 
@@ -1612,7 +1625,7 @@ AI训推平台 → 通用通信大模型训练 → 九天全能小助手 → Ome
     4.	建立自动评测与数据回流闭环，持续优化模型专业能力与稳定性。
 ```
 
-##### 模拟面试	
+##### [模拟面试](https://chatgpt.com/c/6a2d0d19-d93c-83ea-83d5-c276de57e2eb)
 
 ```markdown
 **项目名称**：通信领域通用大模型训练与对齐优化
@@ -1628,13 +1641,6 @@ AI训推平台 → 通用通信大模型训练 → 九天全能小助手 → Ome
 ```
 
 基于开源大模型构建通信行业专属大模型训练体系，完成Post-Train持续预训练、SFT监督微调及DPO偏好对齐全流程研发；搭建数十GB通信领域语料库与多任务指令数据集，采用QLoRA+DeepSpeed实现低成本训练；构建专业评测体系与数据闭环优化机制，最终通信场景问答准确率提升15%，幻觉率下降7%，模型成功落地智能运维、故障诊断、招投标分析等多个生产场景。
-
-**核心贡献：**
-
-- 搭建通信领域 Post-Train → SFT → DPO 完整训练流水线；
-- 构建数十GB领域语料、数万条SFT数据及偏好对齐数据集；
-- 基于QLoRA+DeepSpeed实现高效增量训练，显著降低训练成本；
-- 建立自动评测与数据回流闭环，持续优化模型专业能力与稳定性。
 
 
 
