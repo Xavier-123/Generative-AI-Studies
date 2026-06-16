@@ -12,6 +12,16 @@ Transformer的核心思想：
 >
 > 让每个Token直接看到所有Token。
 
+
+
+
+
+为什么使用 Transformer Decoder-only 架构，不用 Encoder-Decoder 或者纯 RNN？具体技术选型依据是什么？
+
+
+
+
+
 Self-Attention到底是什么
 
 
@@ -75,6 +85,303 @@ MQA / GQA / MLA
 ```
 
 ```
+
+
+
+
+
+## 模拟面试
+
+### Q1：请你整体介绍一下 Transformer 架构，以及 Self-Attention 的核心作用
+
+```markdown
+Transformer 主要由 Encoder 和 Decoder 组成（原始论文结构），每一层包括 Multi-Head Self-Attention 和 Feed Forward Network。
+
+Self-Attention 的核心是通过 Q、K、V 计算序列中每个 token 与其他 token 的相关性，从而实现全局依赖建模。它解决了 RNN 难以并行计算以及长距离依赖难以捕捉的问题。
+```
+
+### Q2：为什么 Self-Attention 可以解决“长距离依赖”，RNN 的瓶颈本质是什么？
+
+```markdown
+RNN 是链式结构，信息需要逐步传递，路径长度是 O(n)，导致远距离 token 梯度容易消失。
+
+Self-Attention 中任意两个 token 直接计算相关性，路径长度是 O(1)，因此更容易建模长距离依赖。
+```
+
+### Q3：Self-Attention 计算复杂度是 O(n²)，为什么工业界还能用？
+
+```markdown
+虽然计算复杂度是 O(n²)，但 Transformer 支持高度并行化，GPU 上效率高。
+
+同时在工程上可以通过：
+    sparse attention
+    sliding window attention
+    FlashAttention
+    等方式优化。
+```
+
+### Q4：你提到了 FlashAttention，它具体优化了什么瓶颈？
+
+```
+FlashAttention 主要优化的是 显存 IO（HBM 访问），不是数学复杂度。
+
+通过 tile 分块计算 attention，避免显式存储完整 attention matrix，从而减少显存读写，提高速度。
+```
+
+### Q5：如果不用 FlashAttention，标准 attention 的 memory bottleneck （内存瓶颈）在哪里？
+
+```markdown
+主要瓶颈是：
+    Attention matrix 是 n×n
+    需要存储 softmax(QK^T)
+    反向传播还要保存中间结果
+
+所以显存占用是 O(n²)，长序列会直接爆显存。
+```
+
+### Q6：Transformer 没有 RNN 的顺序结构，那它是怎么建模 token 顺序的？
+
+```markdown
+通过 Positional Encoding（位置编码）注入位置信息。
+
+原始 Transformer 使用 sin/cos 位置编码，也可以学习 embedding。
+```
+
+### Q7：有哪些位置编码？
+
+```markdown
+
+```
+
+### Q8：为什么 sin/cos 位置编码是“可外推”的？相比 learned embedding 优势是什么？
+
+```markdown
+sin/cos 是函数形式，可以泛化到训练长度之外的 position。
+
+而 learned embedding 只能覆盖训练时见过的位置，超长序列会失效。
+```
+
+### Q9：现在 LLM 为什么很多不用 absolute positional encoding，而用 RoPE？
+
+```markdown
+RoPE（Rotary Position Embedding）是相对位置编码的一种实现方式。
+
+它的优势：
+    将 position 以旋转方式作用在 QK 上
+    attention score 天然包含相对距离
+    更适合长上下文建模
+```
+
+### Q10：RoPE 在长上下文外推时会有什么问题？
+
+```markdown
+会出现 频率外推失真（extrapolation degradation），因为旋转角度线性增长后超出训练分布。
+
+因此会有：
+    NTK scaling
+    YaRN
+    等方法做修正。
+```
+
+### Q11：推理阶段 Transformer 最大的工程优化点是什么？为什么？
+
+```markdown
+主要是 KV Cache。
+因为自回归生成时：
+    K、V 可以复用历史 token
+    不需要重复计算
+    将复杂度从 O(n²) 降为 O(n)
+```
+
+### Q12：KV Cache 可以优化推理，那为什么不能用于训练？
+
+```markdown
+KV Cache 是在自回归推理时缓存历史 K/V，避免重复计算。
+
+训练阶段是并行计算整个序列，每个 token 都要 attend 所有 token，所以无法复用历史 cache。
+```
+
+### Q13：训练也是可以 cache 的，你知道哪里吗？
+
+```markdown
+训练时：
+	forward 是全序列 attention
+	但 decoder-only 模型在 causal mask 下是可以做 block-wise KV reuse 的（如 FlashAttention2 / sequence packing）
+
+但问题是：
+    反向传播需要完整 attention graph
+    KV cache 会破坏 computation graph 的完整性
+```
+
+### Q14：那为什么 inference 可以 cache，training 不行？本质差异到底是什么？
+
+```markdown
+Training：需要梯度传播 + 完整 attention matrix
+Inference：只是 forward sampling
+
+KV Cache 本质：
+	用空间换时间，但破坏了反向传播依赖结构
+```
+
+### Q15：你说 attention 是 QK^T / sqrt(d)，为什么一定要除 sqrt(d)？
+
+```markdown
+防止 dot product 结果过大导致 softmax saturation。
+```
+
+### Q16：如果不用 scaling，会发生什么“数学级别”的问题？
+
+```markdown
+如果不缩放：
+QK^T 方差随 d 增大
+softmax 输入进入极端区间
+导致：
+    梯度接近 0
+    attention 变成 one-hot
+```
+
+### Q17：那为什么 scaling 用的是 √d，而不是 d 或 log d？
+
+```markdown
+
+```
+
+### Q18：Transformer 为什么一定要 Multi-Head？单头不行吗？
+
+```markdown
+Multi-head 可以让模型在不同子空间学习不同关系。
+本质区别：
+    Multi-head = 多个低维 attention subspace
+    Single-head = 一个高维 attention space
+```
+
+### Q19：那如果我把 single-head dimension 调到 multi-head 总维度一样，理论上表达能力是否等价？
+
+```markdown
+理论上表达能力接近，但优化性质不同：
+Multi-head 优势在：
+    更容易优化（inductive bias）
+    梯度更稳定
+    不同 head 专注不同 pattern
+```
+
+### Q20：Transformer 为什么需要 residual connection？去掉会怎样？
+
+```markdown
+避免梯度消失，使训练稳定。
+因为深层 MLP + attention stack：
+
+深层矩阵乘法链
+softmax + linear projection
+Jacobian 连乘
+
+仍然可能：
+gradient norm exponential decay
+```
+
+### Q21：Residual connection 本质上解决的是什么数学问题？
+
+```markdown
+本质是：
+
+让网络学习 residual function：
+F(x) = x + g(x)
+
+等价于优化：
+    identity mapping easier to preserve
+    reduces function space curvature
+    improves conditioning of optimization landscape
+```
+
+### Q22：手撕 Transformer 反向传播推导（核心版）
+
+https://chatgpt.com/?temporary-chat=true
+
+#### Step 1：Attention forward
+
+$$
+Q=XW_Q, K=XW_K ,V=XW_V
+$$
+
+$$
+A=softmax(QK^T/\sqrt[]{d})
+$$
+
+$$
+O=AV
+$$
+
+Step 2：定义 loss
+
+
+
+Step 3：从输出开始反传
+
+
+
+Step 4：softmax 求导（关键难点）
+
+
+
+Step 5：对 Z 求梯度
+
+
+
+Step 6：对 Q 和 K
+
+
+
+Step 7：回到 W_Q, W_K, W_V
+
+
+
+Transformer 反向传播核心是：
+
+> “softmax Jacobian + QK bilinear form + matrix chain rule”
+
+### Q23：
+
+```markdown
+
+```
+
+### Q24：
+
+```markdown
+
+```
+
+### Q25：
+
+```markdown
+
+```
+
+### Q26：
+
+```markdown
+
+```
+
+### Q27：
+
+```markdown
+
+```
+
+### Q28：
+
+```markdown
+
+```
+
+### Q29：
+
+```markdown
+
+```
+
+### Q30：
 
 
 
