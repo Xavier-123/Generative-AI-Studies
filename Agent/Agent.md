@@ -1039,7 +1039,7 @@ Tool Description > Tool Routing > Few-shot > JSON Schema > SFT
 
 ### 3.4.2 Chunk策略
 
-Fixed Chunk (固定大小分块)
+#### Fixed Chunk (固定大小分块)
 
 ```python
 工作原理：
@@ -1057,7 +1057,7 @@ Fixed Chunk (固定大小分块)
 
 
 
-Semantic Chunk (语义分块)
+#### Semantic Chunk (语义分块)
 
 ```python
 工作原理：
@@ -1079,7 +1079,7 @@ Semantic Chunk (语义分块)
 
 
 
-Parent Child Chunk (父子分块 / 检索与生成分离)
+#### Parent Child Chunk (父子分块 / 检索与生成分离)
 
 ```
 工作原理：
@@ -1099,7 +1099,7 @@ Parent Child Chunk (父子分块 / 检索与生成分离)
 
 
 
-Hierarchical Chunk (层级分块)
+#### Hierarchical Chunk (层级分块)
 
 ```
 工作原理：
@@ -1429,6 +1429,8 @@ Top50 → Top5
 - **定义**：Agent 当前正在进行的任务链条中所必需的即时信息（例如正在运行的代码片段、当前的子目标）。
 - **技术实现**：通常直接驻留在 LLM 当前的上下文窗口中，生命周期较短，任务结束即释放。
 
+
+
 #### Long-term Memory
 
 长期记忆, 将信息持久化到外部存储系统。
@@ -1443,7 +1445,7 @@ Top50 → Top5
 
 ##### Episodic Memory
 
-- **情景记忆**
+- **情景 / 事件记忆**
 - **定义**：记录“过去发生了什么”。它保存了 Agent 的历史行为轨迹、调用过的工具日志（Tool Logs）、执行成败以及从中获得的反馈（即“前车之鉴”）。
 - **技术实现**：利用事件溯源（Event Sourcing）设计，通过时间戳、成功/失败标签将每一次的执行轨迹序列化保存，支持相似任务场景下的少样本检索（Few-shot Retrieval）。
 
@@ -1467,8 +1469,8 @@ Top50 → Top5
 
 ##### Entity Memory
 
-- **实体记忆**
-- **定义**：关于特定人、项目、系统或对象的结构化事实（例如：用户 A 喜欢用 Python、项目 B 的截止日期是明天）。
+- **实体 / 结构化记忆**
+- **结构化定义**：关于特定人、项目、系统或对象的结构化事实（例如：用户 A 喜欢用 Python、项目 B 的截止日期是明天）。
 - **技术实现**：通常使用图数据库（Knowledge Graph）或带有 Vector 扩展的关系型 SQL 表，用于维护高度结构化的属性关联。
 
 
