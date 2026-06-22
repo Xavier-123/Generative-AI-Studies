@@ -5,6 +5,7 @@ client = OpenAI(
     # base_url='https://118.25.43.185/v1',
     # api_key = 'sk-CrD0vEl2rfvQRaIm4PHSEKFSbztecs8gbEgkrjym4eMPiZai',
     # base_url = 'https://api.zhangsan.yun/v1',
+
     # 百炼
     # api_key='sk-ws-H.REPRILH.gDzQ.MEUCIBBDsiI6u1VSFm6cLNGJQwjPNCNtKNFZp_KVR6SZ8O57AiEAk9IJSRRLGFJiyQAkGRDEUNE44s_A-EtZQGmymJ7n3UM',
     # base_url='https://dashscope.aliyuncs.com/compatible-mode/v1',
