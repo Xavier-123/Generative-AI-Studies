@@ -641,9 +641,23 @@ https://github.com/datawhalechina/happy-llm
 
 
 
-## 评估
+## 模型评测
 
 ### LLM
+
+#### LLM 的评测数据集
+
+1. **通用评测集**：**[MMLU（Massive Multitask Language Understanding）](https://huggingface.co/datasets/TIGER-Lab/MMLU-Pro)**：MMLU评测模型在多种任务中的理解能力，包括各类学科和知识领域。具体包含了历史、数学、物理、生物、法律等任务类型，全面考察模型在不同学科的知识储备和语言理解能力。
+
+2. **工具使用评测集**：[**BFCL V2**]()：用于评测模型在复杂工具使用任务中的表现，特别是在执行多步骤操作时的正确性和效率。这些任务通常涉及与数据库交互或执行特定指令，以模拟实际工具使用场景。
+
+3. **数学评测集**：[**GSM8K**](https://huggingface.co/datasets/openai/gsm8k)：GSM8K是一个包含小学数学问题的数据集，用于测试模型的数学推理和逻辑分析能力。具体任务包括算术运算、简单方程求解、数字推理等。GSM8K中的问题虽然看似简单，但模型需要理解问题语义并进行正确的数学运算，体现了逻辑推理和语言理解的双重挑战。[**MATH**](https://huggingface.co/datasets/PeakStars/Math-Instruct)：MATH数据集用于测试模型在更复杂的数学问题上的表现，包括代数和几何。
+
+4. **推理评测集**：[**ARC Challenge**](https://huggingface.co/datasets/mib-bench/arc_challenge)：ARC Challenge评测模型在科学推理任务中的表现，尤其是常识性和科学性问题的解答，典型应用场景包括科学考试题解答和百科问答系统的开发。[**GPQA**](https://huggingface.co/datasets/Idavidrein/gpqa)：用于评测模型在零样本条件下对开放性问题的回答能力，通常应用于客服聊天机器人和知识问答系统中，帮助模型在缺乏特定领域数据的情况下给出合理的回答。[**HellaSwag**](https://huggingface.co/datasets/Rowan/hellaswag)：评测模型在复杂语境下选择最符合逻辑的答案的能力，适用于故事续写、对话生成等需要高水平理解和推理的场景。
+
+4. **长文本理解评测集**：[**InfiniteBench/En.MC**](https://huggingface.co/datasets/xinrongzhang2022/InfiniteBench)：评测模型在处理长文本阅读理解方面的能力，尤其是对科学文献的理解，适用于学术文献自动摘要、长篇报道分析等应用场景。[**NIH/Multi-needle**](https://huggingface.co/datasets/LegionIntel/multineedle-3needles-haystack-dataset)：用于测试模型在多样本长文档环境中的理解和总结能力，应用于政府报告解读、企业内部长文档分析等需要处理海量信息的场景。
+
+5. **多语言评测集**：[**MGSM**]()：用于评估模型在不同语言下的数学问题解决能力，考察模型的多语言适应性，尤其适用于国际化环境中的数学教育和跨语言技术支持场景。
 
 
 
@@ -685,31 +699,6 @@ GoT让模型：
 >
 > 多个思路同时探索
 
-
-
-#### Self-Ask
-
-**Self-Ask**（自问）是一种提示工程（Prompt Engineering）技术，旨在让大语言模型通过**显式地提出并回答自己的中间问题**，来逐步推导出最终答案。
-
-它的核心思想是模仿人类的思考过程：当面对复杂问题时，人们会先拆解出子问题，自言自语地逐个解答，然后综合得出最终结论。
-
-
-
-#### Plan&Solve
-
-核心逻辑就是：
-
-1. **Plan**：让大模型先制定解决问题的步骤
-2. **Solve**：让大模型按照步骤执行，最终给出答案
-
-
-
-#### Reflexion
-
-核心逻辑：**大模型先生成初步答案 → 自我反思检查错误 → 基于反思修正答案**（一轮 Reflexion 迭代）
-
-
-
 #### ReAct
 
 推理 + 工具调用双循环逻辑，Few-shot 构造；
@@ -727,6 +716,29 @@ GoT让模型：
 > 3. 工具结果作为 Observation 回填上下文
 > 4. LLM 基于新的上下文继续推理
 > 5. 直到产生 Final Answer
+
+
+
+#### Plan&Solve
+
+核心逻辑就是：**先规划 (Plan)，后执行 (Solve)**。
+
+1. **Plan**：让大模型先制定解决问题的步骤
+2. **Solve**：让大模型按照步骤执行，最终给出答案
+
+
+
+#### Reflexion
+
+核心逻辑：**大模型先生成初步答案 → 自我反思检查错误 → 基于反思修正答案**（**事后的自我校正循环**，一轮 Reflexion 迭代）
+
+
+
+#### Self-Ask
+
+一种提示工程（Prompt Engineering）技术，旨在让大语言模型通过**显式地提出并回答自己的中间问题**，来逐步推导出最终答案。
+
+它的核心思想是模仿人类的思考过程：当面对复杂问题时，人们会先拆解出子问题，自言自语地逐个解答，然后综合得出最终结论。
 
 
 
@@ -1453,7 +1465,28 @@ Top50 → Top5
 
 ### 3.5.5 Memory Engineering
 
-记忆工程，Agent最重要的能力之一。
+#### 为何智能体需要记忆与RAG？
+
+```markdown
+1）局限一：无状态导致的对话遗忘
+当前的大语言模型虽然强大，但设计上是无状态的。这意味着，每一次用户请求（或API调用）都是一次独立的、无关联的计算。模型本身不会自动“记住”上一次对话的内容。这带来了几个问题：
+    上下文丢失：在长对话中，早期的重要信息可能会因为上下文窗口限制而丢失
+    个性化缺失：Agent无法记住用户的偏好、习惯或特定需求
+    学习能力受限：无法从过往的成功或失败经验中学习改进
+    一致性问题：在多轮对话中可能出现前后矛盾的回答
+
+2）局限二：模型内置知识的局限性
+除了遗忘对话历史，LLM 的另一个核心局限在于其知识是静态的、有限的。这些知识完全来自于它的训练数据，并因此带来一系列问题：
+    知识时效性：大模型的训练数据有时间截止点，无法获取最新信息
+    专业领域知识：通用模型在特定领域的深度知识可能不足
+    事实准确性：通过检索验证，减少模型的幻觉问题
+    可解释性：提供信息来源，增强回答的可信度
+    为了克服这一局限，RAG技术应运而生。它的核心思想是在模型生成回答之前，先从一个外部知识库（如文档、数据库、API）中检索出最相关的信息，并将这些信息作为上下文一同提供给模型。
+```
+
+
+
+
 
 #### Short-term Memory
 
@@ -1563,6 +1596,10 @@ Top50 → Top5
 
 ## 3.6 Harness Engineering（⭐⭐）
 
+```
+
+```
+
 
 
 ------
@@ -1639,15 +1676,15 @@ RAG系统的评估通常分为两个核心部分：**检索阶段（Retrieval）
   - **时间（Latency）**：执行任务耗时多久？
 - **异常处理与纠错能力（Robustness）**：当遇到工具调用报错、网络超时或用户干扰时，Agent是否能够自我纠错并继续执行。
 
+
+
 #### 2. 评测基准（Benchmarks）
 
 在Agent评测中，高质量的测试集/模拟环境（基准）比单纯的工具更关键。目前业界公认的主流基准有：
 
 - **SWE-bench**：软件工程智能体基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。要求Agent在真实的、庞大的GitHub开源代码库中定位并解决真实的Issue[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。由于需要读写代码、运行测试，这是目前难度最高、最贴近生产环境的评测之一。
 - **GAIA (General AI Assistants)**：通用AI助手基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。包含各种需要多模态理解、长跨度推理、复杂工具使用（如查网页、读取PDF、运行Python脚本等）的实际生活与工作任务[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。
-- **WebArena / Mind2Web**：网页交互智能体基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。模拟真实网页环境（如电商、社交论坛、Gitlab等），评估Agent在网页端进行导航、搜索、下单等端到端操作的能力[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。
 - **BFCL (Berkeley Function-Calling Leaderboard)**：加州大学伯克利分校提出的函数调用基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。专门用来评估模型在单步/多步/并行工具调用、参数提取上的准确率，是智能体工具调用能力的“黄金标准”。
-- **AgentBench**：清华大学等机构提出的多维度评测框架，涵盖操作系统（OS）、数据库（DB）、网络浏览、卡牌游戏等八大虚拟交互环境[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。
 
 #### 3. 评测与可观测性工具
 
@@ -1657,10 +1694,6 @@ RAG系统的评估通常分为两个核心部分：**检索阶段（Retrieval）
   - **特点**：在评估多轮对话、多Agent协作（Multi-agent）和状态机工作流方面极具优势。它能清晰展现每个Agent的决策分支、记忆读取和工具交互 trace。
 - **DeepEval (Confident AI)**
   - **特点**：引入了针对Agent的专项评估指标（如Tool Correctness），支持对带有有向无环图（DAG）结构的Agent工作流进行端到端回归测试，帮助团队在CI/CD阶段拦截有缺陷的Agent发布。
-- **Braintrust**
-  - **特点**：集成CI/CD的Agent测试工具，支持大规模高并发的Agent运行模拟，能将多次实验的评估指标与代码提交（PR）关联，适合工程化成熟度高的团队。
-- **W&B Weave / Comet Opik**
-  - **特点**：传统的机器学习实验追踪工具进军Agent领域的产品。提供零配置的Agent Tracing、提示词/参数优化器（Agent Optimizer）以及轻量级SLM（小语言模型）本地打分评估器。
 - **Galileo**
   - **特点**：支持将离线测试与实时线上护栏（Guardrails）相结合。不仅在发布前评估Agent的轨迹合理性，还能在生产环境中监控Agent是否产生了死循环、越权工具调用或越轨行为。
 
@@ -1695,6 +1728,24 @@ Here are the main patterns for building multi-agent systems, each suited to diff
 | [**Custom workflow**](https://docs.langchain.com/oss/python/langchain/multi-agent/custom-workflow) | Build bespoke execution flows with [LangGraph](https://docs.langchain.com/oss/python/langgraph/overview), mixing deterministic logic and agentic behavior. Embed other patterns as nodes in your workflow. |
 
 ------
+
+
+
+## 模拟面试
+
+### Q1：skills和mcp的区别？
+
+```
+
+```
+
+Q2：
+
+```
+
+```
+
+Q3：
 
 # 四、部署
 
@@ -3200,7 +3251,7 @@ Multi-step reasoning、Constraint reasoning（约束推理）、Counterfactual r
 
 ###### Q32：通信数据“脏 + 噪声 + 模板化严重”，如何解决
 
-```
+```markdown
 1）分层数据清洗
     rule-based filter（日志模板去重）
     MinHash / SimHash 去重
@@ -3217,7 +3268,7 @@ Multi-step reasoning、Constraint reasoning（约束推理）、Counterfactual r
 
 ###### Q33：loss下降但能力不提升，如何解决？
 
-```
+```markdown
 1）分domain loss监控
     必须拆：
     Chinese telecom loss
@@ -3238,7 +3289,7 @@ Multi-step reasoning、Constraint reasoning（约束推理）、Counterfactual r
 
 ###### Q34：长文本能力退化，如何解决？
 
-```
+```markdown
 1）长样本“强化采样”（重复采样）
     不是5%，而是：
     token-level oversampling（不是 sample-level）
@@ -3264,7 +3315,7 @@ Multi-step reasoning、Constraint reasoning（约束推理）、Counterfactual r
 
 ###### Q35：幻觉严重
 
-```
+```markdown
 1）RAG强绑定训练
     训练时加入：
     retrieved context only answer loss（训练时，只允许模型看检索到的“小抄”来回答，不看小抄答对的统统不算分，甚至要扣分！）
@@ -3279,13 +3330,93 @@ Multi-step reasoning、Constraint reasoning（约束推理）、Counterfactual r
 3）fact-consistency reward（如果有后训练）
 ```
 
-Q36：
+###### Q36：长上下文能力是通过继续预训练自然获得的，还是单独做了 long-context adaptation（比如 RoPE scaling / NTK / YaRN）？
+
+```markdown
+工业界基本是“混合方案”，不是二选一
+可以理解为三段式：
+    模型结构层（必须）：扩展 position encoding 上限
+    训练层（关键）：注入长依赖分布
+    对齐层（最后）：让模型学会“正确用长上下文”
+
+长上下文能力一般不是单靠 continued pretraining 自然获得的，而是一个“结构改造 + 数据课程学习 + 对齐训练”的组合过程。
+
+如果只做 continued pretrain，在 RoPE 或位置编码没有处理的情况下，模型会在 extrapolation 阶段出现 attention distortion，远距离 token 的有效性会显著下降。
+
+因此工业界通常会先做 RoPE scaling / NTK 或 YaRN 这类 position interpolation 方法，把 attention 的频域稳定性扩展到目标 context length，然后再通过 curriculum learning 的方式逐步引入长序列数据，比如从 4K → 16K → 32K。
+
+最后还会做专门的 long-context task alignment，比如 multi-document QA 或 needle retrieval，来避免“能看长文本但不会用”的问题。
+```
+
+###### Q37：在长上下文数据占比较高的情况下，你们是如何处理 short/long sequence 的训练冲突的？是混训还是分阶段训练？
+
+```markdown
+short/long sequence 的冲突 = 梯度贡献不均 + 计算效率不均 + 表示学习目标不一致
+“分阶段训练 + batch-level mixture control（动态混合）”的组合方案
+
+1、分阶段训练（2K → 4K → 8K → 16K → 32K）
+2、Token-level mixture（控制short token/long token = 2:1）
+3、Dynamic batching（按长度分桶，再按桶取batch）
+4、Loss reweighting（降低long token的权重）
+
+
+五、一个具体例子（帮助你彻底理解）
+假设你设定：
+类型	token target
+short	70%
+long	30%
+Step 1：Token-level mixture
+
+系统先决定：
+这个 step 需要：
+- 14K short tokens
+- 6K long tokens
+
+👉 注意：这是 token budget，不是 sample 数
+
+Step 2：进入 dynamic batchin
+short tokens：
+[200, 300, 500, 800]
+[400, 600, 700]
+
+long tokens：
+[12K]
+[18K]
+
+Step 3：batch组装
+dynamic batching 会：
+short → 组成高效 batch（padding低）
+long → 单独 batch（避免拖慢）
+```
+
+###### Q38：你们在预训练或微调阶段，是如何定义数据质量指标的？有没有做过 data mixture reweighting 或 curriculum strategy？
+
+```markdown
 
 ```
 
+###### Q39：你们评估 long-context 能力时，主要依赖 needle-in-a-haystack 还是 RULER / passkey retrieval？有没有发现训练指标和真实效果不一致的情况？
+
+```markdown
+needle-in-a-haystack + RULER + passkey retrieval + 真实任务评测（RAG/多文档QA）组合使用
+
+1、在超长上下文中插入一个“关键事实”，看模型能否找到。
+2、类似 needle，但更结构化：多个 key-value pairs，不同位置插入，要求精确 recall
+3、长上下文中的综合推理能力：retrieval、multi-hop reasoning、distractor filtering、long instruction following
 ```
 
-Q37：
+###### Q40：RoPE scaling / NTK / YaRN
+
+```markdown
+# 目前YaRN最常用
+https://www.doubao.com/chat/38432200367245826
+```
+
+Q41：
+
+
+
+Q42：
 
 
 
