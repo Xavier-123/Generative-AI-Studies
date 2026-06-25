@@ -602,31 +602,159 @@ https://github.com/datawhalechina/happy-llm
 
 微调体系：SFT、RLHF、DPO、ORPO、RM 训练逻辑，全参 / LoRA/QLoRA 微调适用场景；
 
-### SFT
+### 1. 参数高效微调
+
+#### [LoRA](https://anyicheng.blog.csdn.net/article/details/154388473)
+
+```
+# LoRA
+冻结原模型，只训练低秩矩阵（A、B）去逼近权重更新。
+LoRA的核心原理：用“低秩矩阵”替代“全秩更新”（给模型加一条“低秩旁路”）
+```
+
+####  [QLoRA](https://zhuanlan.zhihu.com/p/671089942)
+
+```
+# QLoRA
+(1）NF4 Quantization（4-bit量化）：这是一种基于信息论启发的全新int4量化技术。NF4量化能保障在量化过程中数据分布的一致性，换句话说，经NF4量化的权重信息损失较小，从而保证模型整体精度的最小损失。
+
+(2）Double Quantization：对初次完成量化的常量进行二次量化，进一步缩减模型存储体积。
+
+(3）Paged Optimizers：利用NVIDIA的统一内存管理功能，该技术可以在CPU和GPU之间自动进行页对页的传输，使得即便在GPU偶发地内存溢出（OOM）时仍能够继续进行训练。这可以理解为在训练过程中出现临时OOM时的自动故障处理机制。
+
+(4）增加Adapter: 4-bit的NormalFloat与Double Quantization，节省了很多空间，但带来了性能损失，作者通过插入更多adapter来弥补这种性能损失。在LoRA中，一般会选择在query和value的全连接层处插入adapter。而QLORA则在所有全连接层处都插入了adapter，增加了训练参数，弥补精度带来的性能损失,
+```
+
+##### 什么是NF4？
+
+```
+
+```
 
 
 
-### LoRA
+#### Adapter Tuning
+
+```
+
+```
 
 
 
-### QLoRA
+#### Prefix / Prompt Tuning
+
+```
+
+```
 
 
 
-### DPO
+### 2. 全参数微调
+
+#### Full Parameter Fine-tuning
+
+```
+核心思想：
+更新全部模型参数。
+
+特点：
+效果最强（理论上）
+训练成本最高
+容易灾难性遗忘
+```
 
 
 
-### PPO
+### 3. 指令微调体系
+
+#### SFT
+
+```
+核心：
+	用（instruction → response）数据训练模型。
+
+关键点：
+    数据质量 > 算法
+    prompt格式设计很关键
+    多轮对话格式（ChatML / Alpaca）
+```
+
+#### 多任务/混合微调
+
+```
+特点：
+    多领域混合数据训练
+    提升泛化能力
+    常用于 base model 后训练阶段
+```
 
 
 
-### GRPO
+### 4. 对齐类微调
+
+#### DPO / IPO / KTO
+
+```
+核心思想：
+	不训练RL，而是直接做“偏好对比优化”。
+
+优点：
+    简单稳定
+    不需要reward model
+    当前工业主流替代RLHF
+```
+
+#### PPO
+
+```
+
+```
+
+#### GRPO
+
+```
+
+```
+
+#### RLHF
+
+```
+三阶段：
+    SFT（监督微调）
+    Reward Model（奖励模型）
+    PPO优化
+
+特点：
+    ChatGPT经典方案
+    对话质量提升明显
+    训练复杂
+```
 
 
 
-### RLHF
+### 5. 数据驱动增强路线
+
+#### Self-Instruct / Synthetic Data
+
+```
+
+```
+
+#### Curriculum / Progressive Training
+
+```
+
+```
+
+
+
+### 6. 长上下文专项微调
+
+#### Long Context Extension / Tuning
+
+```
+
+```
 
 
 
