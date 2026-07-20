@@ -1,5 +1,17 @@
 # 一、基础
 
+## 基础理论
+
+### Transformer架构
+
+### 主流开源大模型
+
+
+
+### MoE
+
+### Scaling Law
+
 ## 模拟面试
 
 ### Transformer
@@ -586,7 +598,7 @@ GQA 是“减少 head 数”，MLA 是“压缩 KV 表示空间”。
 
 
 
-# 二、微调
+# 二、训练
 
 相关教程：
 
@@ -596,9 +608,7 @@ https://github.com/datawhalechina/happy-llm
 
 
 
-
-
-## LLM 微调（⭐⭐）
+## 后训练与对齐（⭐⭐）
 
 微调体系：SFT、RLHF、DPO、ORPO、RM 训练逻辑，全参 / LoRA/QLoRA 微调适用场景；
 
@@ -802,8 +812,21 @@ PPO和GRPO都绕不开“评分”环节（无论是RM评分还是规则评分�
 
 ### Agent 微调
 
-- **Agent 专有微调：** 了解如何通过微调（SFT）提升模型在特定 Agent 任务上的表现（例如提升 Function Calling 的准确率、提高遵循复杂格式的能力）。
-- **基于强化学习的 Agent 训练（RL for Agent）**
+#### Agent SFT
+
+了解如何通过微调（SFT）提升模型在特定 Agent 任务上的表现（例如提升 Function Calling 的准确率、提高遵循复杂格式的能力）。
+
+#### Agent RL
+
+##### 数据结构
+
+![image-20260717163253527](C:\Users\Xavier\AppData\Roaming\Typora\typora-user-images\image-20260717163253527.png)
+
+
+
+### 数据建设
+
+万亿级token的高质量数据清洗、配比与合成数据研究
 
 
 
@@ -821,6 +844,52 @@ Triplet Loss：anchor（query）、positive、negative 三元组，要求 sim(q,
 InfoNCE（多分类交叉熵）：在一个 batch 内，将正例视为唯一正确类别，负例为其他所有类别，形式为 softmax 交叉熵。这是目前最主流的方式。
 Multiple Negatives Ranking Loss：适用于只有正例对、没有显式负例的场合，将同一 batch 内其他 query 的正例当作该 query 的负例。
 ```
+
+
+
+
+
+## 优化策略
+
+### TP、DP、PP
+
+
+
+### 分布式优化
+
+
+
+### GPU调优
+
+
+
+### 模型轻量化
+
+量化（GPTQ、AWQ）、剪枝、蒸馏
+
+
+
+
+
+## 开源框架
+
+### DeepSpeed
+
+
+
+### Megatron-LM
+
+
+
+### LLaMA-Factory
+
+
+
+### TRL
+
+### 
+
+### verl
 
 
 
@@ -1052,6 +1121,8 @@ GoT让模型：
 
 
 ### OpenClaw
+
+
 
 
 
@@ -1671,6 +1742,10 @@ Top50 → Top5
 
 
 
+#### 记忆的生命周期机制
+
+**“读（检索）、写（存储）、改（更新）、删（遗忘）”**来阐述
+
 
 
 #### Short-term Memory
@@ -1724,6 +1799,14 @@ Top50 → Top5
 - **技术实现**：通常使用图数据库（Knowledge Graph）或带有 Vector 扩展的关系型 SQL 表，用于维护高度结构化的属性关联。
 
 
+
+#### 评估数据集
+
+**LoCoMo**
+
+**LongMemEval**
+
+**BEAM** 
 
 
 
@@ -1811,7 +1894,7 @@ Top50 → Top5
 
 ### 3.7.1  RAG能力评测
 
-RAG系统的评估通常分为两个核心部分：**检索阶段（Retrieval）\**和\**生成阶段（Generation）**。
+RAG系统的评估通常分为两个核心部分：**检索阶段（Retrieval）**和**生成阶段（Generation）**。
 
 #### 1. 评估方法
 
@@ -1867,9 +1950,19 @@ RAG系统的评估通常分为两个核心部分：**检索阶段（Retrieval）
 
 在Agent评测中，高质量的测试集/模拟环境（基准）比单纯的工具更关键。目前业界公认的主流基准有：
 
-- **SWE-bench**：软件工程智能体基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。要求Agent在真实的、庞大的GitHub开源代码库中定位并解决真实的Issue[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。由于需要读写代码、运行测试，这是目前难度最高、最贴近生产环境的评测之一。
-- **GAIA (General AI Assistants)**：通用AI助手基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。包含各种需要多模态理解、长跨度推理、复杂工具使用（如查网页、读取PDF、运行Python脚本等）的实际生活与工作任务[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。
-- **BFCL (Berkeley Function-Calling Leaderboard)**：加州大学伯克利分校提出的函数调用基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。专门用来评估模型在单步/多步/并行工具调用、参数提取上的准确率，是智能体工具调用能力的“黄金标准”。
+##### AgentBench
+
+##### SWE-bench
+
+软件工程智能体基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。要求Agent在真实的、庞大的GitHub开源代码库中定位并解决真实的Issue[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。由于需要读写代码、运行测试，这是目前难度最高、最贴近生产环境的评测之一。
+
+##### GAIA 
+
+通用AI助手基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。包含各种需要多模态理解、长跨度推理、复杂工具使用（如查网页、读取PDF、运行Python脚本等）的实际生活与工作任务[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。
+
+##### BFCL
+
+加州大学伯克利分校提出的函数调用基准[[8](https://www.google.com/url?sa=E&q=https%3A%2F%2Fvertexaisearch.cloud.google.com%2Fgrounding-api-redirect%2FAUZIYQGWfqYWht6807GcS0oHJxxtxJb1BCQXBL9Uu49knnErgSKP7pIbBeKdJnfnOFTSWsXxAVg4y781cJlOr5IogPH4GxgZa0wniS3sdFmgSoHN2CgrqhHms2ZRvaMV7eBJneMoXrxn4tWWqyHa)]。专门用来评估模型在单步/多步/并行工具调用、参数提取上的准确率，是智能体工具调用能力的“黄金标准”。
 
 #### 3. 评测与可观测性工具
 
@@ -1888,6 +1981,12 @@ RAG系统的评估通常分为两个核心部分：**检索阶段（Retrieval）
 
 ## 3.8 Agentic RL（⭐⭐）
 
+为什么需要 Agentic RL？
+
+
+
+
+
 Search-R1
 
 TinyZero
@@ -1897,6 +1996,20 @@ ReTool
 Multi-Turn-RL-Agent
 
 DeepResearcher
+
+
+
+### 数据合成
+
+基于DataSynth项目合成数据
+
+
+
+评估合成质量：
+
+SAGE: Multi-Agent Self-Evolution for LLM Reasoning
+
+
 
 
 
@@ -1916,6 +2029,10 @@ Here are the main patterns for building multi-agent systems, each suited to diff
 
 
 
+
+
+
+
 ## 模拟面试
 
 ### Q1：skills和mcp的区别？
@@ -1924,7 +2041,7 @@ Here are the main patterns for building multi-agent systems, each suited to diff
 
 ```
 
-Q2：
+### Q2：超长任务可靠性
 
 ```
 
@@ -1944,11 +2061,27 @@ Python 进阶：异步 asyncio、Pydantic（函数参数结构化，Function Cal
 
 
 
-## 4.1 LLM推理优化（⭐）
+## 4.1 LLM推理优化（⭐⭐）
 
 量化基础：FP8、GPTQ、AWQ，推理优化基础（vLLM/SGLang/PagedAttention），看懂推理链路。
 
+C/C++
 
+并行程序开发经验
+
+GPU的 kernel 编程
+
+算子优化、图优化
+
+CUDA开发
+
+Nsight System
+
+GPU加速库：cubls、cudnn、cutlass
+
+XLA、TVM、MLIR开发优化经验
+
+LLVM 原理和使用
 
 ## 4.2 服务端部署
 
@@ -2013,7 +2146,13 @@ Python 进阶：异步 asyncio、Pydantic（函数参数结构化，Function Cal
 
 # 五、其它
 
-## **A2A**
+## 
+
+
+
+
+
+## A2A
 
 
 
@@ -2021,7 +2160,7 @@ Python 进阶：异步 asyncio、Pydantic（函数参数结构化，Function Cal
 
 
 
-## Skills（⭐）
+## Skills（⭐⭐）
 
 
 
@@ -2039,7 +2178,33 @@ Python 进阶：异步 asyncio、Pydantic（函数参数结构化，Function Cal
 
 
 
+## 算子开发
 
+| 方向              | 重要程度 |
+| ----------------- | -------- |
+| C++               | ⭐⭐⭐⭐⭐    |
+| CUDA              | ⭐⭐⭐⭐⭐    |
+| GPU架构           | ⭐⭐⭐⭐⭐    |
+| PyTorch Extension | ⭐⭐⭐⭐     |
+| FlashAttention    | ⭐⭐⭐⭐⭐    |
+| Tensor Core       | ⭐⭐⭐⭐     |
+| NCCL              | ⭐⭐⭐⭐     |
+| Triton Kernel     | ⭐⭐⭐⭐     |
+| Ascend C          | ⭐⭐⭐      |
+
+
+
+### CUDA基础 + GPU架构
+
+### PyTorch C++ Extension
+
+### Triton Kernel
+
+### FlashAttention源码
+
+### vLLM PagedAttention源码
+
+### TensorRT-LLM/FasterTransformer源码
 
 ------
 
@@ -2099,16 +2264,35 @@ https://chatgpt.com/c/6a2a4aff-22ac-83ea-bdf4-3631c4dbf48d
 - **具备鲁棒的自诊断与偏差发现能力**：在“质检分类”等未见明显指标提升的复杂场景中，利用系统的“易错类别发现 Agent”与自评估机制，主动诊断并定位出评估数据源自身存在的标注偏差，避免了算法盲目拟合噪声，验证了系统评估体系的客观性与严谨性。
 - **标注效率跃升与人工降本**：通过全自动化的 Prompt 与经验库迭代流程，将策略调优周期由传统人工的**数天缩短至小时级**；大幅减少了标注过程中的人工干预和校验频次，显著提升了海量数据的整体标注吞吐量。
 - **高工程性能与泛化扩展性**：通过引入动态经验库压缩机制，单次推理延迟增量控制在极低水平（毫秒级），满足高并发标注的性能要求；系统分层架构具备良好扩展性，可无缝复用至 RAG、Agent 等更复杂的上下文学习（In-Context Learning）场景。
-
-
-
-# 训练阶段 Text Grad 生成 m 个 prompt 模板，给每个样本使用，batch = group(n) * prompt(m)
 ```
 
 
 
 **面试时的口语化讲法：**
- 我做的是一个面向对话语料标注的自进化智能体系统。这个系统的目标是解决人工标注贵、慢，而且遇到新业务和新表达时很难快速适应的问题。整体上分成三层：先用通用粗分类做初始标注，再根据易错类别做自进化优化，最后通过细分类模块对高混淆样本逐级校验。系统还会自动优化提示词，让大模型在不训练参数的情况下持续提升标注效果。
+
+我来介绍一个我独立牵头负责的核心项目：对话数据标注自进化 Agent 系统。
+
+先说说背景，当时我们用大模型落地电销、邀约这类垂直业务的意图识别、复杂分类需求时，遇到了很实际的痛点：全靠人工调 Prompt，不仅调试成本高、效果不稳定，而且攒下来的领域经验也没法系统化沉淀、持续复用。所以我主导设计并落地了这么一套系统 —— 不用微调模型参数，纯靠推理侧的增强方案，让系统在标注和推理过程中自动沉淀领域经验、自主优化 Prompt，实现低成本、可解释的效果持续迭代。
+
+具体我核心做了四块工作：
+
+第一块是搭建了自进化的语料标注机制。不用一开始就投入大量人力做标注打底，只要给少量种子样本，就能引导大模型自顶向下搭建起完整的分类知识体系，自动完成海量对话数据的标注，还能边跑边优化，从根源上解决了传统人工标注成本高、迭代周期长的问题。
+
+第二块是技术上最核心的设计：把 GRPO 群体相对策略优化和 Text Grad 文本梯度结合，做了一套适配多分类场景的非参数化协同优化方案。原本的 GRPO 是单样本对比多条推理轨迹，我把它扩展成了 “多样本 - 多轨迹” 模式，让模型在一个批次里同时对比不同类别的推理链路，主动提炼出清晰的分类边界；再基于 Text Grad 的思路，让 Agent 自己复盘做对和做错的推理差异，生成文本形式的修正意见，再把提炼出的通用规则结构化沉淀到动态经验库里。另外我还设计了和批次准确率挂钩的自适应奖励函数：准确率低的时候放宽更新门槛，优先快速纠错探索；准确率高了就收紧门槛，优先保证系统稳定，让 Prompt 和经验库能平滑协同演进。
+
+第三块是设计了分层 Agent 协同架构，做了动静隔离的工程优化。我把系统拆成了多分类主 Agent + 易错类别二分类诊断 Agent，形成分层纠错的闭环。同时我把费算力的 GRPO 迭代、文本梯度反思这些重操作，全部放到后台异步的 “编译期” 运行；线上真实推理的 “运行期” 只用精简版 Prompt 加动态检索关联经验的轻量化方案，既保留了完整的自进化能力，又把线上的延迟和 Token 消耗压到了最低。
+
+第四块是搭了完整的量化评测门禁和防漂移机制。自进化系统最怕越迭代越跑偏，也就是常说的语义漂移、灾难性遗忘这类问题。所以我做了黄金验证集门禁：每次 Prompt 或经验库要更新，必须先在固定的验证集上跑回归测试，指标不退化才能上线。同时针对经验库，我做了向量加 BM25 的混合检索，线上推理只召回最相关的 Top-K 规则；还加了定期合并去重、清理长期未被调用规则的机制，让经验库规模一直保持在合理区间，不会越用越臃肿。
+
+最后落地效果也很扎实：
+
+指标上，电销黑名单分类准确率从 81.9% 提升到了 89.96%，试驾邀约意图识别从 58% 涨到了 73%，大部分业务场景的标注准确率平均提升 8% 以上，标注一致性也提升了很多。
+
+还有个挺有价值的点：有个质检分类的复杂场景，一直没看到明显指标提升，系统的易错诊断模块主动定位出 —— 是评估用的数据集本身就存在标注偏差，避免了我们盲目拟合噪声，也验证了这套评估体系的客观性。
+
+效率上，原来人工调一轮策略要数天，现在系统自动迭代，小时级就能完成一轮，大幅减少了人工干预，标注吞吐量提升很明显。
+
+性能上也控制得很好，线上推理的延迟增量只有毫秒级，完全扛得住高并发标注；而且这套架构扩展性很强，后面复用到 RAG、Agent 这类上下文学习场景也完全通用。
 
 
 
@@ -2234,14 +2418,9 @@ Multi-Class GRPO：
 	每个batch中包含多个类别
 	跨类别边界比较
 	
-Hard Negative
-→发现问题
-
-TextGrad
-→总结规律
-
-经验库
-→长期记忆
+Hard Negative → 发现问题
+TextGrad → 总结规律
+经验库 → 长期记忆
 ```
 
 ###### Q15：为什么不在线学习？
@@ -2273,12 +2452,12 @@ TextGrad
 ```markdown
 第一步：考核候选提示词的“三个指标”
 	答得对不对（正确率得分）
-	答得清不清晰（边界区分得分）
-	是不是太啰唆（字数冗余扣分）
+	答得清不清晰（边界区分得分），这里不需要
+	是不是太啰唆（字数冗余扣分），这里不需要
 
 第二步：同台竞技，只看“相对优势”（GRPO 核心）
 	每次迭代，系统会同时生成 5∼10 个不同的提示词版本。
-    让这些版本在同一批测试数据上“同台竞技”，算出各自的总分。
+    让这些版本在同一批测试数据上“同台竞技”，算出各自的总分（分析轨迹 + 最终答案）。
     计算它们的平均分。
     比平均分高得多的，定义为**“尖子生（正向反馈）”；比平均分低得多的，定义为“不及格生（逆向反馈）”**。
     文本梯度系统只会参考“尖子生”和“不及格生”的答题差异来进行针对性反思。
@@ -2325,6 +2504,7 @@ TextGrad
     2. 设计多阶段推理流水线：搭建“优化-检索-推理-验证-反思”五阶段架构，支持复杂问题的多轮联动推理与证据补全。
     3. 实现闭环自纠错机制：融合验证链（CoV）与一致性投票，引入反思智能体，形成“幻觉识别-补全-重推理-验证”的纠错闭环。
     4. 搭建自动化评测方案：基于公开基准完成消融实验，构建自动化评测流水线以支撑系统的持续迭代。
+    5. 正在尝试微调 阶段2 中使用的模型。
 ```
 
 
@@ -2344,7 +2524,7 @@ TextGrad
         基于 ReAct 框架实现智能体检索循环，配套上下文追踪机制避免重复读取语块，实现渐进式信息获取；底层基于 FAISS 构建句子级向量索引，结合实时精确匹配实现混合检索，兼顾检索精度与查询效率。
         设计自主路由机制，由模型自主判断是否需要检索、选择何种检索方式、何时终止检索并输出答案，支持多跳复杂问题的自主分解与分步证据收集，自适应不同难度的问答任务。
 2. 多阶段零幻觉推理链路构建
-        搭建查询改写 → 自主检索 → 多路径推理 → 事实验证 → 自我反思五阶段推理流水线，实现检索与推理的深度交替联动；融合 Graph of Thoughts 多路径推理思想，支持复杂问题的拆解与并行验证。
+        搭建查询优化 → 自主检索 → 多路径推理 → 事实验证 → 自我反思五阶段推理流水线，实现检索与推理的深度交替联动；融合 Graph of Thoughts 多路径推理思想，支持复杂问题的拆解与并行验证。
         结合 Self-RAG 自评估思路，让模型在推理过程中主动判断知识缺口并触发定向检索，而非依赖外部规则触发，从源头减少参数知识偏差导致的幻觉。
         支持多轮迭代补全证据链，针对验证环节发现的事实缺失、逻辑断点，自动触发二次检索补充信息，解决单轮检索信息不足导致的隐性幻觉。
 3. 推理验证与自纠错闭环机制
@@ -2399,18 +2579,16 @@ TextGrad
 
 
 
-###### Q4：Query Rewrite → Retrieval → Reasoning → Verification → Reflection，这个链路是串行的吗？还是有并行？为什么这样设计？
+###### Q4：Query Optimize  → Retrieval → Reasoning → Verification → Reflection，这个链路是串行的吗？还是有并行？为什么这样设计？
 
 ```markdown
 整体是主链路串行 + 局部并行优化：
 主链路：
-
-Query → Rewrite → Retrieval → Reasoning → Verification → Reflection
+	Query → Query Optimize → Retrieval → Reasoning → Verification → Reflection
 
 原因：
-
-幻觉问题本质是“逐步放大错误”
-必须强制 step-wise gating
+	幻觉问题本质是“逐步放大错误”
+	必须强制 step-wise gating
 
 并行优化点：
 1）Retrieval 并行
@@ -2425,27 +2603,21 @@ FAISS + keyword index hybrid
 
 ```markdown
 1）Router机制（关键）
-
 不是所有请求都走全链路：
-
-简单问题 → 直出 LLM
-知识类 → RAG
-高风险 → 全链路验证
-
+    简单问题 → 直出 LLM
+    知识类 → RAG
+    高风险 → 全链路验证
 👉 用 Agent Router 做 classification
 
 2）Early Exit（提前终止）
-
 如果：
-
-retrieval confidence 高
-reasoning consistency 高
-
+    retrieval confidence 高
+    reasoning consistency 高
 👉 直接跳过 Reflection
 
 3）缓存机制
-retrieval cache（query embedding）
-reasoning cache（similar query patterns）
+    retrieval cache（query embedding）
+    reasoning cache（similar query patterns）
 ```
 
 ###### Q6：
@@ -2458,12 +2630,10 @@ reasoning cache（similar query patterns）
 
 ```markdown
 普通 RAG：
-
-“找资料 → 直接回答”
+	“找资料 → 直接回答”
 
 CoVe：
-
-“先生成 → 再逐条验证 → 再修正”
+	“先生成 → 再逐条验证 → 再修正”
 ```
 
 ###### Q8：CoVe 验证用的是什么模型？如果还是同一个 LLM，不是自嗨吗？
@@ -2479,12 +2649,12 @@ prompt：“检查是否有错误”
 2）Cross Model Verification（中）
 generator ≠ judge
 用 Qwen / GPT / Claude 不同模型交叉验证
+
 3）Retrieval-grounded verification（强）
 每个 claim 必须匹配 evidence
 用 embedding similarity + NLI judge
 
 最终采用：
-
 “模型 + 检索 + NLI 三重验证”
 ```
 
@@ -2494,10 +2664,12 @@ generator ≠ judge
 区别在“发生时机不同”，解决不同问题：
 
 CoVe：
-	post-hoc verification（事后检查，修正已生成错误）
+	post-hoc verification（事后检查，修正已生成错误）,“先生成 → 再逐条验证 → 再修正”
 
 Self-RAG：
-	generation-in-loop（生成过程中动态检索，防止生成过程跑偏）
+	generation-in-loop（生成过程中动态检索，防止生成过程跑偏）,“检索 → 验证 → 再检索”
+	
+Self-RAG 负责按需检索、确保答案有文档来源；CoVe 再二次校验生成文本里每条事实是否自洽、无矛盾，双重抑制幻觉。
 ```
 
 ###### Q10：
@@ -2522,8 +2694,8 @@ Self-RAG：
     1）引入置信度阈值
     confidence > 0.85 → 不触发 reflection
     2）规则 + LLM hybrid judge
-    规则过滤明显正确答案
-    LLM只处理边界case
+    使用规则过滤明显的正确答案
+    LLM只处理边界 hard case
 ```
 
 ###### Q12：如果让你重做这个项目，你会砍掉哪个模块？为什么？
@@ -2694,12 +2866,6 @@ Reflection Agent 接收验证报告，结合当前迭代次数，做出三类决
 
 ###### Q23：
 
-
-
-###### Q23：
-
-###### 
-
 ------
 
 
@@ -2718,12 +2884,12 @@ Reflection Agent 接收验证报告，结合当前迭代次数，做出三类决
 **技术栈**： Python、CUDA、CANN、MindIE、vLLM、SGLang、FastAPI、Docker、LoRA/QLoRA、模型蒸馏、LLM
 
 **项目描述**：
-	搭建覆盖数据处理、模型训练、模型蒸馏、推理部署及模型管理的一站式大模型平台，支持GPU、NPU（昇腾910B）、DCU等异构算力环境，实现大模型、多模态模型、Embedding及Reranker模型的统一训推与部署。累计完成10+模型跨平台适配，模型交付周期由3天缩短至1天以内，整体效率提升60%以上。
+	搭建覆盖数据处理、模型训练、模型蒸馏、推理部署及模型管理的一站式大模型平台，支持GPU、NPU（昇腾910B）、DCU等异构算力环境，实现LLM大模型、多模态大模型、Embedding及Reranker模型的统一训推与部署。累计完成10+模型跨平台适配，模型交付周期由3天缩短至1天以内，整体效率提升60%以上。
 
 **核心工作**：
-	1.数据与训练平台建设： 自研数据标注与蒸馏工具，构建高质量训练数据流水线；封装PT、SFT、DPO、蒸馏等训练范式，支持Full Fine-tuning、LoRA、QLoRA等微调方案。
-	2.异构算力适配： 完成GPU、NPU及DCU环境适配，解决模型迁移适配、训练推理可用性验证、多机多卡性能测试和瓶颈分析。
-	3.推理与平台化建设： 集成vLLM、SGLang、MindIE等推理引擎，基于FastAPI与Docker实现模型工程化部署落地。
+	1.数据与训练平台建设：自研数据标注与蒸馏工具，构建高质量训练数据流水线；封装PT、SFT、DPO、蒸馏等训练范式，支持Full Fine-tuning、LoRA、QLoRA等微调方案。
+	2.异构算力适配：完成GPU、NPU及DCU环境适配，解决模型迁移适配、训练推理可用性验证、多机多卡性能测试和瓶颈分析。
+	3.推理与平台化建设：集成vLLM、SGLang、MindIE等推理引擎，基于FastAPI与Docker实现模型工程化部署落地。
 ```
 
 
@@ -2745,7 +2911,7 @@ Reflection Agent 接收验证报告，结合当前迭代次数，做出三类决
     设计多维数据质量评估指标（语义重复度、困惑度、任务一致性），提升数据有效性
     将低质量人工标注依赖降低 50%+
 2. 多范式训练平台研发
-    统一抽象 PT / SFT / DPO / PPO/ GRPO 多类训练范式，构建可插拔训练执行框架
+    统一抽象 PT / SFT / DPO / PPO / GRPO 多类训练范式，构建可插拔训练执行框架
     支持 Full Fine-tuning / LoRA / QLoRA 自动策略选择（基于显存与任务类型）
     设计训练任务编排系统（Pipeline化），支持断点恢复、失败重试与任务优先级调度
     实现训练过程指标可观测（loss / grad norm / lr / GPU util）
@@ -2759,7 +2925,6 @@ Reflection Agent 接收验证报告，结合当前迭代次数，做出三类决
 5. 模型资产管理与平台化建设
     构建统一 Model Registry（LLM / Embedding / Reranker / 多模态）
     提供 FastAPI 标准化服务接口 + Docker 化部署链路
-    对接 Kubernetes（作为底层资源调度系统，非核心自研部分）
     
 **项目成果**
     支撑GPU、NPU、DCU三类异构算力环境统一管理；
@@ -2768,9 +2933,62 @@ Reflection Agent 接收验证报告，结合当前迭代次数，做出三类决
     模型部署周期由1天缩短至30分钟；
     运维成本降低50%，整体研发与交付效率提升60%以上；
     支撑多个企业级AI应用场景快速落地与迭代。
-    
+```
+
+
 
 ```
+
+```
+
+###### 1. 代码与环境迁移
+
+- **遇到什么：** 原始代码中充斥着大量的 cuda 字眼，比如 model.to('cuda')、inputs = inputs.cuda()，并且使用了 NVIDIA 生态的分布式训练工具。
+
+- **怎么做：**
+
+  - 我们在昇腾环境中安装了对应的 CANN 驱动包和 torch_npu 插件。
+
+  - 在训练启动脚本（Python 代码）的最顶部加入 import torch_npu。
+
+  - 把代码中的 device = 'cuda' 统一修改为 device = 'npu'。对于多卡分布式训练，我们将 PyTorch 原生的 nccl 通信后端修改为昇腾支持的 **hccl**（Huawei Collective Communication Library）：
+
+    ```python
+    # 原始代码
+    # torch.distributed.init_process_group(backend="nccl")
+    # 修改后
+    torch.distributed.init_process_group(backend="hccl")
+    ```
+
+  - 通过这样简单的几步替换，让代码能够在 NPU 环境上跑起来不直接报错报错。
+
+###### 2. 算子兼容性解决
+
+- **遇到什么：** 代码跑起来后，在第一步的前向传播时突然崩溃，报错显示某个算子在 NPU 上不支持。排查后发现，LLaMA 架构中使用了 **RMSNorm（均方根归一化）**，而原始代码中导入的是一个针对 NVIDIA GPU 编写的自定义 CUDA Kernel（通常由 Triton 或 C++ 编写）。
+- **怎么做：**
+  - 由于这个特殊的 CUDA Kernel 无法直接在 NPU 上运行，我们首先采取了**临时替代方案**：用 PyTorch 原生的基础数学算子拼装了一个 Python 版的 RMSNorm（包含 mean、pow、sqrt 等基础算子）。
+  - 虽然拼装版的算子运行效率较低，但它不依赖特定的 GPU 硬件，成功让模型顺利避开了报错，完成了前向和反向传播的初步打通。
+
+###### 3. 精度对齐
+
+- **遇到什么：** 模型虽然能跑了，但我们发现微调了几个 Step 之后，**训练 Loss 突然变成了 NaN（数值溢出）**，或者 Loss 下降的速度和在 A100 上完全对不上，出现了严重的精度偏差。
+- **怎么做：**
+  - 我们使用昇腾提供的**精度比对工具（Precision Debugger）**，在 A100 和 910B 上用完全相同的输入数据和权重，分别跑了一次前向传播，并 Dump 出每一层算子的输出 Tensor。
+  - 通过工具的余弦相似度比对，我们发现在第 12 层的 Attention 计算中，由于使用了 bfloat16 精度，昇腾底层的某些指数计算（如 Softmax 内部）因为溢出保护机制的微小差异，导致数值产生了极大的偏差。
+  - **解决手段：** 我们在代码中对该 Attention 的 Softmax 局部计算进行了“精度提升”，即在前向传播计算 Softmax 时，显式地将 Tensor 转换为 float32，计算完成后再转回 bfloat16 发送给下一层。重新训练后，Loss 曲线终于恢复正常，与 A100 的收敛趋势基本一致。
+
+###### 4. 性能调优
+
+- **遇到什么：** 精度对齐后，模型可以稳定训练了。但我们发现单步训练耗时极长，吞吐量（Tokens/second）大概只有 A100 的 35% 左右，这显然不符合 910B 的实际算力表现。
+- **怎么做：**
+  - 我们开启了 **Ascend Profiler** 抓取了一段训练的 Timeline（时间线）。
+  - 通过可视化分析发现：
+    1. 之前我们在步骤 2 中用 PyTorch 基础算子拼装的 RMSNorm，在底层被拆分成了十几个小算子频繁下发，产生了大量的 **AICPU 算子调用和 Host-Device 之间的内存拷贝**，成为了严重的性能瓶颈。
+    2. Attention 计算没有利用硬件的高带宽优势。
+  - **解决手段：**
+    - 我们用 torch_npu 内置的高性能融合算子 torch_npu.npu_rms_norm 替换掉了我们自己拼装的 Python 版算子。
+    - 引入了昇腾原生支持的 **FlashAttention-2**（通过 npu_fusion_attention 或 npu_prompt_flash_attention 接口），将矩阵乘法、Softmax、Dropout 融合成一个大算子直接在 AICore 内完成计算。
+  - 经过这两项优化，算子下发频率大幅降低，AICore 始终处于饱满的工作状态。最终，模型的训练吞吐量提升了数倍，达到了预期的性能指标。
 
 
 
@@ -2861,43 +3079,6 @@ SGLang：
 
 
 
-###### Q5：你的推理优化做了什么？
-
-```markdown
-三个层面：
-
-算子层
-    fused attention
-    RMSNorm融合
-调度层
-    continuous batching
-    dynamic batch size
-缓存层
-    KV cache reuse
-    prefix caching
-
-效果：
-    QPS 提升 2.5x
-    P95 latency 降低 40%
-
-追问：
-    batch size动态怎么调？
-    OOM怎么防？
-    GPU利用率怎么测？
-```
-
-###### Q6：
-
-```markdown
-
-```
-
-###### Q7：
-
-```markdown
-
-```
-
 ###### Q8：你说自动生成数据，怎么防幻觉？
 
 ```markdown
@@ -2925,6 +3106,12 @@ embedding filter
 🔥追问：
     CoT会不会泄露噪声？
     student capacity不够怎么办？
+    	引入“助教”模型：先用教师模型（大）蒸馏助教模型（中），再用助教模型（中）蒸馏学生模型（小）。
+    	优化损失函数与超参数调节。
+    	采用渐进式蒸馏：多阶段训练、分层逐步蒸馏。
+    	优化特征对齐（Feature-based KD）的策略。
+    	改进学生模型自身的网络设计。
+    	样本筛选：过滤掉教师模型自身也极其不确定（熵过高）的样本。
 ```
 
 ###### Q10：训练任务失败怎么恢复？
@@ -2934,9 +3121,9 @@ embedding filter
 基于 checkpoint + state recovery：
     每 N step 自动 checkpoint
     保存 optimizer state + lr scheduler
-    支持 resume training
+    支持继续训练（resume training）
 🔥追问：
-    DDP 多机断了怎么恢复？
+    DDP 多机断了怎么恢复？：checkpoint + 定期保存
     有没有 partial rollback？
 ```
 
@@ -2966,17 +3153,10 @@ embedding filter
     提升来自哪里？
 ```
 
-###### Q13：K8s你做了吗？
-
-```markdown
-K8s是底层资源编排系统，由基础设施团队提供，我们的工作主要在其之上做AI训练与推理任务的调度抽象层和模型生命周期管理，包括任务封装、资源请求描述、模型部署流水线等。
-```
-
 ###### Q14：你这个“训推与异构算力平台”整体是解决什么问题的？
 
 ```markdown
 这个平台主要解决企业在大模型落地过程中三个核心问题：
-
     第一是模型全生命周期管理碎片化，从数据、训练、评估到部署缺乏统一链路；
     第二是异构算力环境复杂，包括GPU、昇腾NPU、DCU，不同框架（CUDA/CANN）导致模型迁移成本高；
     第三是推理与训练系统割裂，训练与推理各自独立，缺乏统一调度与模型资产管理能力。
@@ -3028,12 +3208,6 @@ K8s负责底层容器与资源调度，我们在其上做的是AI任务调度抽
 
 
 
-Q19：
-
-
-
-
-
 #### B. **[通信领域通用大模型训练与对齐优化](https://chatgpt.com/c/6a2b7987-3fa8-83ea-9c84-3d5a6946ffff)**
 
 ##### 简历版
@@ -3056,12 +3230,12 @@ Q19：
 **技术栈：**PyTorch、QLoRA、LoRA、Post-Train、SFT、DPO、分布式训练、模型评测体系
 **项目概述**：针对通信行业算网运维、通信故障诊断、招投标分析、财务稽核等核心场景，基于 Qwen2.5-32B 开展领域化训练与能力对齐，构建覆盖“领域知识注入→指令理解→偏好对齐”的全流程训练体系；最终相较原生开源底座模型，业务场景问答准确率提升15%，模型幻觉率降低7%，故障排查场景任务完成率提升12%。
 **核心职责**：
-    1. **数据集构建**：整合行业文档、历史故障工单、招投标资料、运维手册等内外部私有数据，分别构建面向领域知识注入的 Post-train 无标注语料，高质量通信专属 SFT 训练数据集，以及构建通信领域偏好 DPO 数据集；`设计完整数据处理流水线，完成文本解析(PDF/Word/HTML等异构文档解析)、格式统一、脏数据过滤、相似度去重(MinHash+Embedding相似度去重)、业务数据脱敏（PII敏感信息脱敏）、高质量样本筛选等工作。
+    1. 数据集构建：整合行业文档、历史故障工单、招投标资料、运维手册等内外部私有数据，分别构建面向领域知识注入的 Post-train 无标注语料，高质量通信专属 SFT 训练数据集，以及构建通信领域偏好 DPO 数据集；`设计完整数据处理流水线，完成文本解析(PDF/Word/HTML等异构文档解析)、格式统一、脏数据过滤、相似度去重(MinHash+Embedding相似度去重)、业务数据脱敏（PII敏感信息脱敏）、高质量样本筛选等工作。
     2. 通信领域持续预训练（Post-Train）:构建通信专业语料训练集、实现领域增量训练Pipeline、设计学习率Warmup与Cosine Decay策略、采用QLoRA + DeepSpeed降低训练成本、监控Loss、Perplexity等训练。对比实验：LoRA 和 全量参数
     3. 多阶段监督微调（SFT）:覆盖多个任务：故障定位问答、运维工单分析、CLI指令解析、招投标信息抽取、财务规则审核、专业知识问答。第一阶段：增强指令跟随、格式遵循和多轮对话能力；第二阶段：重点强化通信术语理解、故障分析推理和专业知识生成能力。
     4. 强化学习对齐（DPO）：设计评价维度：专业准确性、事实一致性、推理完整性、回答可执行性、幻觉控制
-    5. **模型评测与迭代**：搭建通信领域专项评测体系。通用能力：BLEU、ROUGE、MT-Bench；专业能力：通信知识问答准确率、故障定位成功率、工单解析准确率、招投标信息抽取准确率；安全与稳定性：Hallucination Rate、Consistency Score、Refusal Rate。建立：数据分析、模型训练、自动评测、错误归因、数据优化、重新训练的持续迭代优化闭环。
-    6. 落地赋能**：将成型通信大模型无缝接入公司智能体开发平台，实现垂直模型多业务场景复用。
+    5. 模型评测与迭代：搭建通信领域专项评测体系。通用能力：BLEU、ROUGE、MT-Bench；专业能力：通信知识问答准确率、故障定位成功率、工单解析准确率、招投标信息抽取准确率；安全与稳定性：Hallucination Rate、Consistency Score、Refusal Rate。建立：数据分析、模型训练、自动评测、错误归因、数据优化、重新训练的持续迭代优化闭环。
+    6. 落地赋能：将成型通信大模型无缝接入公司智能体开发平台，实现垂直模型多业务场景复用。
 ```
 
 基于开源大模型构建通信行业专属大模型训练体系，完成Post-Train持续预训练、SFT监督微调及DPO偏好对齐全流程研发；搭建数十GB通信领域语料库与多任务指令数据集，采用QLoRA+DeepSpeed实现低成本训练；构建专业评测体系与数据闭环优化机制，最终通信场景问答准确率提升15%，幻觉率下降7%，模型成功落地智能运维、故障诊断、招投标分析等多个生产场景。
@@ -3747,9 +3921,7 @@ Q42：
 **项目描述**：面向企业级客户打造低代码智能体开发平台，支持任务拆解、工具调用、自主决策、检索增强生成能力，助力业务快速搭建专属自动化智能体；本人负责LLM能力增强与RAG全维度评测体系搭建两大核心模块。
 **核心工作**：
     1、LLM能力增强。优化多层级RAG检索架构，融合稀疏检索、稠密检索多路召回策略；搭配Prompt优化、答案融合、推理拆解等技术，有效降低模型幻觉，提升复杂问题回答准确率；优化后知识库问答幻觉率下降19%，答案整体准确率提升25%。
-
     2、RAG评估功能开发。搭建自动化评测模块，围绕**忠实度、答案相关性、上下文精度/召回率、实体召回率**五大核心指标，完成全链路自动化评测；替代传统人工抽检模式，降低60%以上RAG评估成本；
-
     3、平台能力适配：联动语音模型，实现智能体语音交互能力，适配多终端使用场景，完善平台企业级交付能力。
 ```
 
@@ -4763,8 +4935,10 @@ P-Tuning v2对显存最友好。
 
 面试官您好，我叫肖傲文，重庆大学电子与通信工程硕士，拥有近 5 年大模型与算法研发经验，今天应聘大模型算法工程师岗位。
 
-我先后在浪潮通信、马上消费金融任职，覆盖大模型全链路技术栈。在浪潮期间，我主导了大模型异构算力训推平台建设，完成 GPU、昇腾 NPU、DCU 等多类国产硬件的模型适配；搭建了通信领域大模型从持续预训练、SFT 到 DPO 对齐的完整训练流水线，实现业务场景问答准确率提升 15%、幻觉率下降 7%；同时负责企业级智能体平台的多层级 RAG 架构设计，将幻觉率降低 19%，评估人力成本缩减 60%。
+我先后在浪潮通信、马上消费金融任职，覆盖大模型训练、部署及应用链路技术栈。
+
+在浪潮期间，我主导了大模型异构算力训推平台建设，完成 GPU、昇腾 NPU、海光 DCU 多类硬件的模型适配；搭建了通信领域大模型从持续预训练、SFT 到 DPO 对齐的完整训练流水线，实现业务场景问答准确率提升、幻觉率下降；同时负责企业级智能体平台的多层级 RAG 架构设计，降低幻觉率，缩减评估人力成本。
 
 加入马上消费后，我聚焦 Agent 自进化与零幻觉推理方向，落地了对话数据标注自进化 Agent 系统，通过非参数 GRPO 优化、多 Agent 动静隔离架构，核心业务分类与意图识别准确率平均提升 8% 以上；同时研发五阶段零幻觉推理框架，配套自动化幻觉评测体系。
 
-此外我拥有两项国家级行业赛事获奖经历，熟悉从模型训练对齐、推理部署到 RAG、Agent 系统落地的全流程研发，也具备丰富的国产算力适配经验，希望能加入团队贡献价值，谢谢。
+此外我拥有两项行业赛事获奖经历，熟悉从模型训练对齐、推理部署到 RAG、Agent 系统落地的全流程研发，也具备昇腾和海光算力适配经验，希望能加入团队贡献价值，谢谢。
