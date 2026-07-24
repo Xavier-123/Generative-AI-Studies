@@ -2541,9 +2541,22 @@ TextGrad → 总结规律
 
 ##### 模拟问题
 
-###### Q1：基础介绍
+###### Q1：调研其它机构如何做的
 
 ```markdown
+# deepseek
+
+# kimi
+
+# glm
+
+# 豆包
+
+# chatgpt
+
+# claude
+
+# gemini
 
 ```
 
