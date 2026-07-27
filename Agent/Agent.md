@@ -364,7 +364,7 @@ Transformer 本质上是一个基于编码器-解码器（Encoder-Decoder）架�
 解码器最后输出的向量，经过一个 线性层（Linear） 映射到词表大小，再套一个 Softmax 输出概率分布，挑概率最高的词作为预测结果。
 ```
 
-#### Q25：Post-Norm 和  Pre-Norm 有什么区别？
+#### Q25：Post-Norm 和  Pre-Norm 有什么区别？（+1）
 
 ```markdown
 第一步：一句话定差异（面试官第一印象）
@@ -399,7 +399,7 @@ Post-Norm 的优势：Norm 在最后，允许残差支路的原始信息尽可�
 现在很多新模型（比如 LLaMA 2/3）在 Pre-Norm 基础上，把 LayerNorm 换成了 RMSNorm（去掉了均值中心化，只做缩放）。因为它计算量更小，且在 Pre-Norm 结构下，中心化带来的好处微乎其微，省下的算力可以拿去堆更多数据。
 ```
 
-#### Q26：为什么是层归一化，而不是Batch归一化？
+#### Q26：为什么是层归一化，而不是Batch归一化？（+1）
 
 ```markdown
 第一步：一句话定调（直接亮明观点）
@@ -2083,13 +2083,25 @@ XLA、TVM、MLIR开发优化经验
 
 LLVM 原理和使用
 
+### 高频考点
+
+#### 1、Prefill阶段 vs Decode阶段
+
+```
+
+```
+
+
+
+
+
 ## 4.2 服务端部署
 
 - [vLLM](https://docs.vllm.ai/?utm_source=chatgpt.com)
 - [SGLang](https://docs.sglang.ai/?utm_source=chatgpt.com)
 - mindie
 
-面试高频：
+#### 
 
 - Prefix Cache
 - KV Cache
