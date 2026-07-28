@@ -2083,15 +2083,245 @@ XLA、TVM、MLIR开发优化经验
 
 LLVM 原理和使用
 
-### 高频考点
+### A. 分布式优化
 
-#### 1、Prefill阶段 vs Decode阶段
+**核心目标**：通信层面优化，解决单卡显存装不下超大模型、或单卡算子吞吐达不到要求的分布式并行问题。
+
+#### 张量并行 
+
+Tensor Parallelism（TP）。如 Megatron-LM TP，将 Linear 层的权重矩阵按行或列切分到多卡，降低单卡显存并并行计算，但通信频率较高（需要 All-Reduce/All-Gather）。
+
+
+
+#### **流水线并行**
+
+Pipeline Parallelism(PP)。将模型的 Transformer 层按层切分部署在不同 GPU 上，以 Stage 方式串行/流水化处理，适合跨节点/大模型部署。
+
+#### 序列并行 / 上下文并行 (Sequence / Context Parallelism, SP/CP)
+
+针对超长上下文场景（如 128k+），将 Sequence 维度切分到多卡并行处理（如 DeepSpeed-Ulysses、Ring-Attention）。
+
+
+
+#### 专家并行 (Expert Parallelism, EP)
+
+针对 MoE（混合专家模型），将不同的 Expert 分散部署在不同 GPU 上，利用 All-to-All 算子进行 Token 路由通信。
+
+
+
+#### 计算与通信重叠 (Communication-Computation Overlap)
+
+在 TP/EP 中利用 Async NCCL 通信，将 GEMM 计算与跨卡通信（All-Reduce/All-to-All）在时间线（Stream）上重叠，隐藏通信开销。
+
+
+
+------
+
+
+
+### B. 低比特量化
+
+**核心目标**：降低权重与激活值的数值精度，从而减少显存占用并提升计算/访存效率。
+
+
+
+#### Weight-Only 量化 (如 INT4/INT8/FP4)
+
+仅对权重矩阵量化，激活值维持 FP16/BF16，适合 Decode 阶段（访存密集型）。典型算法有 **AWQ**（保护显著通道）、**GPTQ**（二阶梯度补偿）、**SqueezeLLM**。
+
+
+
+#### Weight-Activation (W&A) 联合量化
+
+权重和激活值同时量化（如 INT8 W8A8、FP8 W8A8），使计算能够真正走硬件低精度 INT8/FP8 Tensor Core，大幅提升算力上限。典型算法有 **SmoothQuant**、**OmniQuant**。
+
+
+
+#### FP8 原生精度推理
+
+利用现代 GPU（如 Nvidia H100/H200/B200）硬件支持的 FP8（E4M3 / E5M2）格式进行高吞吐推理。
+
+
+
+#### KV Cache 量化
+
+将历史存储的 Key/Value 矩阵量化为 INT8/INT4/FP8 格式，显著降低长文本与高并发下的显存开销。
+
+------
+
+
+
+### C. 算子优化
+
+**核心目标**：从底层（CUDA/Triton 级）榨干 GPU 硬件的计算与访存潜能，减少 Kernel Launch 开销与访存瓶颈。
+
+
+
+#### FlashAttention 系列 (v1/v2/v3)
+
+通过 IO 感知与 Tiling（分块）技术，将注意力计算限制在 GPU SRAM 内，极大减少了对 HBM（显存）的频繁读写。
+
+
+
+#### FlashDecoding / FlashDecoding++
+
+针对 Decode 阶段（SeqLen=1）优化 Attention，通过在 KV 序列维度上引入并行度，解决 Decode 阶段 GPU 算力利用率低的问题。
+
+
+
+#### 算子融合 (Kernel Fusion)
+
+将多个连续的小算子（如 RMSNorm、RoPE 位置编码、SwiGLU 激活函数、Element-wise 操作）手写/编译融合为一个大 Kernel，减少 HBM 访存和内核启动开销。
+
+
+
+#### CUDA Graph
+
+将包含众多小 Kernel 的执行流程录制为一个 Static Graph，在推理执行时由 GPU 一次性触发，消除 Host（CPU）端频繁 Kernel Launch 的延迟（ Decode 阶段尤其显著）。
+
+
+
+#### DSL 编译与内核定制 (Triton / CUTLASS)
+
+使用 OpenAI Triton 或 NVIDIA CUTLASS 编写高度定制化的高性能 GEMM/Attention 内核，替代通用的 PyTorch 默认算子。
+
+
+
+#### Triton
+
+------
+
+
+
+### D. 服务并发优化
+
+**核心目标**：提升 serving 系统的并发能力、整体吞吐量（Throughput）与服务 SLA（如 TTFT 首字延迟、TFT 逐字延迟）。
+
+
+
+#### 连续批处理 (Continuous Batching / In-flight Batching)
+
+打破传统 Static Batching 的限制，在 Token 级别动态调度请求。一旦某个请求生成结束立即退出，新请求立即插入 Batch，极大消除了 Padding 浪费。
+
+
+
+#### Prefill 与 Decode 解耦/分离 (PD Separation)
+
+将计算密集型的 Prefill 阶段（高算力要求）与访存密集型的 Decode 阶段（高带宽要求）部署在不同的物理集群/节点上，避免互相抢占资源（如 Mooncake、Splitwise、DistServe）。
+
+
+
+#### Chunked Prefill (分块 Prefill)
+
+将超长 Prompt 拆分为小块（Chunk），与 Decode 阶段的 Token 混合在一个 Batch 中计算，平滑系统的 P99 延迟，防止长请求卡死短请求。
+
+
+
+#### 动态 Batch & 资源感知调度
+
+根据实时显存剩余量、请求长度以及 KV Cache 动态开销，自适应调整 Batch 大小及请求优先级。
+
+
+
+------
+
+
+
+### E. 显存优化
+
+**核心目标**：消除显存碎片、降低 KV Cache 的空间占用，让单卡能装下更长上下文和更多并发。
+
+
+
+#### PagedAttention
+
+借鉴操作系统虚拟内存的分页机制，将 KV Cache 切分为固定大小的 Block 离散存储在显存中，消除了外部显存碎片，使显存利用率提升至接近 100%（vLLM 核心技术）。
+
+
+
+#### 注意力架构演进 (MQA / GQA)：
+
+- **MQA (Multi-Query Attention)**：所有 Query 头共享一组 Key/Value 头。
+- **GQA (Grouped-Query Attention)**：Query 头按组共享 Key/Value 头（如 Llama 2/3）。相比传统的 MHA，KV Cache 显存占用可降低 4x~8x。
+- 
+  **MLA（Multi-head Latent Attention）**：降低 KV Cache 的显存占用，同时尽量保持 Multi-Head Attention 的表达能力。把 KV 压缩到一个低维潜在空间（Latent Space），存储压缩后的 latent cache。
 
 ```
+MHA:
 
+Q1 ---> K1,V1
+Q2 ---> K2,V2
+Q3 ---> K3,V3
+...
+Q32 --> K32,V32
+
+
+MQA:
+
+Q1 ---\
+Q2 ----\
+Q3 ----- > K,V
+...
+Q32---/
 ```
 
 
+
+| 机制 | KV Cache存储  | 压缩方式 | 表达能力 |
+| ---- | ------------- | -------- | -------- |
+| MHA  | 完整KV        | 无       | 最高     |
+| MQA  | 1组KV         | 减少head | 下降明显 |
+| GQA  | 少量KV head   | 分组共享 | 中等     |
+| MLA  | latent vector | 低秩压缩 | 较高     |
+
+
+
+| 技术          | 压缩方式        | 是否需要scale |
+| ------------- | --------------- | ------------- |
+| MQA           | 减少KV Head     | ❌ 不需要      |
+| GQA           | 减少KV Head     | ❌ 不需要      |
+| MLA           | 学习latent压缩  | ❌ 不需要      |
+| INT8 KV Cache | 数值量化        | ✅需要         |
+| FP8 KV Cache  | 数值量化        | ✅通常需要     |
+| MLA + FP8     | latent压缩+量化 | ✅需要         |
+
+
+
+
+
+#### KV Cache 剪枝与压缩 (KV Cache Pruning/Eviction)
+
+通过算法丢弃不重要的 KV Token（如 **StreamingLLM** 保留 Attention Sink 和滑动窗口；**H2O** 保留 Heavy Hitter Token）。
+
+
+
+#### 前缀缓存 (Prefix / Prompt Caching)
+
+对系统 Prompt、常用模板或多轮对话的前缀 KV Cache 进行复用与 Hash 缓存，避免重复 Prefill 计算并节省显存。
+
+
+
+#### 显存/内存/NVMe 卸载 (Offloading)
+
+在超长上下文或显存极度紧缺时，将暂时用不到的 KV Cache 或模型权重动态 Offload 到 CPU 内存或 NVMe SSD 中。
+
+------
+
+
+
+### F. 其它优化技术
+
+**核心目标**：不属于上述单一范畴、或跨领域的算法创新与架构替代方案。
+**典型技术**：
+
+- **投机采样 (Speculative Decoding)**：使用一个小而快的 Draft Model（草稿模型）并行生成多个 Token，再由大模型（Target Model）一次性并行验证。变相将逐字 Decode 转为类似 Prefill 的并行验证，大幅提升单请求生成速度（如 Medusa、EAGLE-1/2）。
+- **模型剪枝与蒸馏 (Pruning & Distillation)**：
+  - **结构化剪枝**：直接剪裁掉不重要的 Layer、Head 或 Channel，降低模型参数量。
+  - **知识蒸馏**：将大模型（如 70B/405B）的推理能力蒸馏至小模型（如 8B/3B），保持较高精度的同时提升推理效率。
+- **线性注意力与非 Transformer 架构替代 (SSM / Linear RNN)**：
+  - 采用 **Mamba (SSM)**、**RWKV**、**RetNet** 等具备复杂度的新架构。这类架构在 Decode 阶段只需要固定大小的 State 向量，从根本上消除了随着上下文增加而不断膨胀的 KV Cache 瓶颈。
+
+------
 
 
 
