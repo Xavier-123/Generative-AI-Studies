@@ -1,0 +1,33 @@
+model:
+  path: E:/models/Qwen/Qwen2.5-0.5B-Instruct
+  architecture: causal_lm
+  use_lora: true
+
+data:
+  path: data/rl/agent_train.jsonl
+  mode: rl
+  max_length: 4096
+  validation_ratio: 0.02
+
+training:
+  algorithm: agent_rl
+  num_epochs: 1
+  train_batch_size: 1
+  eval_batch_size: 1
+  gradient_accumulation_steps: 4
+  learning_rate: 0.00001
+  precision: auto
+  device: auto
+
+rollout:
+  backend: transformers
+  num_generations: 4
+  max_new_tokens: 1024
+  temperature: 0.8
+  top_p: 0.95
+
+runtime:
+  seed: 42
+  cuda_visible_devices: "0"
+
+output_dir: output/agent_rl

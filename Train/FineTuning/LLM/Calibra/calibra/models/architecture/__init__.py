@@ -1,0 +1,1 @@
+"""Built-in architecture registrations."""
