@@ -1,8 +1,7 @@
-"""基于 PyTorch + Transformers 的 Qwen SFT 微调训练入口。
+"""基于 PyTorch + Transformers 的 Qwen 普通 SFT / Agent SFT 训练入口。
 
-数据来源为 `1-sft-data_proccess.py` 生成的 CSV 文件（列: history, q, a）。
-训练时使用 Qwen 的对话模板拼接 system / history / user / assistant，
-并且只对 assistant 的回答部分计算 loss（prompt 部分的 label 置为 -100）。
+普通 SFT 兼容 history/q/a；Agent SFT 使用 messages + tools 工具调用轨迹。
+两种模式均只对 assistant 生成内容计算 loss，不监督 system/user/tool。
 
 不使用 transformers 的 Trainer：前向、loss、反向、梯度累积、梯度裁剪、
 学习率调度、评估与断点保存全部用原生 PyTorch 手写实现。

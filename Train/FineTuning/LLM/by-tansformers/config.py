@@ -18,9 +18,18 @@ import transformers
 # 路径与数据
 # =============================================================================
 MODEL_PATH = r'E:\models\Qwen\Qwen2.5-0.5B-Instruct'   # 基础模型路径
-DATA_PATH = r'../data/sft_data_mixed_single.csv'        # 训练数据 CSV
+DATA_PATH = r'../data/sft_data_mixed_single.csv'        # CSV / JSON / JSONL
 OUTPUT_DIR = './output'                                 # 输出目录
 SYSTEM_PROMPT = 'You are a helpful assistant.'          # 系统提示词
+
+# 训练目标：
+#   sft       - 普通 SFT；兼容 history/q/a，并且只监督最后一轮 assistant。
+#   agent_sft - Agent 轨迹 SFT；输入必须包含 messages，监督轨迹中每一轮 assistant
+#               （包括 tool_calls 和最终回答），不监督 system/user/tool。
+TRAINING_MODE = 'sft'
+
+# messages 数据没有 system 消息时，是否自动补上 SYSTEM_PROMPT。
+ADD_SYSTEM_PROMPT_IF_MISSING = True
 
 MAX_LENGTH = 2048        # 单条样本最大 token 数，超出截断
 VAL_RATIO = 0.02         # 验证集比例
@@ -45,9 +54,9 @@ LORA_TARGET_MODULES = [
 # 训练超参数（替代 TrainingArguments）
 # =============================================================================
 NUM_EPOCHS = 3
-TRAIN_BATCH_SIZE = 2
-EVAL_BATCH_SIZE = 2
-GRAD_ACCUM_STEPS = 8            # 等效 batch = TRAIN_BATCH_SIZE * GRAD_ACCUM_STEPS
+TRAIN_BATCH_SIZE = 1
+EVAL_BATCH_SIZE = 1
+GRAD_ACCUM_STEPS = 4            # 等效 batch = TRAIN_BATCH_SIZE * GRAD_ACCUM_STEPS
 LEARNING_RATE = 1e-4 if USE_LORA else 2e-5
 WEIGHT_DECAY = 0.1
 WARMUP_RATIO = 0.05
