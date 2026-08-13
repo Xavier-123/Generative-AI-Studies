@@ -148,4 +148,29 @@ python scripts/train.py --config configs/dpo_config.yaml
 python scripts/evaluate.py --config configs/sft_config.yaml --checkpoint output/sft/final
 ```
 
+## C-Eval / CMMLU 评测
+
+`scripts/evaluate_benchmarks.py` 支持 C-Eval 和 CMMLU 的选择题评测。脚本对
+`A/B/C/D` 四个选项分别计算条件 log 概率，选择得分最高者，并输出总体准确率和
+分科目准确率。支持官方常见的 `val/*.csv` 布局，也支持 CSV、JSON、JSONL 文件；
+文件需要包含 `question,A,B,C,D,answer` 字段（`test` 数据没有 `answer` 时仍可
+生成预测）。
+
+```powershell
+python scripts/evaluate_benchmarks.py `
+  --config configs/sft_config.yaml --checkpoint output/sft/final `
+  --benchmark ceval --data-dir data/ceval --split val `
+  --output output/ceval_val.json --predictions output/ceval_predictions.jsonl
+
+python scripts/evaluate_benchmarks.py `
+  --config configs/sft_config.yaml --benchmark cmmlu --data-dir data/cmmlu
+
+# data/benchmarks/ceval 和 data/benchmarks/cmmlu 同时存在时
+python scripts/evaluate_benchmarks.py `
+  --config configs/sft_config.yaml --benchmark both --data-dir data/benchmarks
+```
+
+可用 `--subjects computer` 限定科目，`--max-length` 覆盖配置中的上下文长度。
+运行前安装训练依赖：`pip install -e ".[train,dev]"`。
+
 支持 `training.num_epochs=1` 形式的命令行覆盖。根目录 `main.py` 保留为兼容启动器；原有根目录模块仍保留，现有 checkpoint 和旧脚本无需立即改动。
