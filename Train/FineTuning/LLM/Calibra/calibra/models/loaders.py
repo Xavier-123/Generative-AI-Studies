@@ -75,6 +75,13 @@ def load_dpo_models(config):
     return policy, reference, tokenizer
 
 
+def load_grpo_models(config):
+    """Load a trainable policy and a frozen copy of its initial base model."""
+    policy, tokenizer = load_model(config, trainable=True)
+    reference, _ = load_model(config, trainable=False)
+    return policy, reference, tokenizer
+
+
 def reference_context(policy, reference):
     if reference is not None:
         return reference, nullcontext()

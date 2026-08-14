@@ -26,6 +26,13 @@ rollout:
   temperature: 0.8
   top_p: 0.95
 
+grpo:
+  reward: response_length
+  clip_range: 0.2
+  kl_coef: 0.04
+  num_iterations: 1
+  advantage_eps: 0.000001
+
 runtime:
   seed: 42
   cuda_visible_devices: "0"

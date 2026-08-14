@@ -79,6 +79,15 @@ class RolloutConfig:
 
 
 @dataclass
+class GRPOConfig:
+    reward: str = "exact_match"
+    clip_range: float = 0.2
+    kl_coef: float = 0.04
+    num_iterations: int = 1
+    advantage_eps: float = 1e-6
+
+
+@dataclass
 class RuntimeConfig:
     seed: int = 42
     cuda_visible_devices: Optional[str] = None
@@ -91,6 +100,7 @@ class ExperimentConfig:
     training: TrainingConfig = field(default_factory=TrainingConfig)
     dpo: DPOConfig = field(default_factory=DPOConfig)
     rollout: RolloutConfig = field(default_factory=RolloutConfig)
+    grpo: GRPOConfig = field(default_factory=GRPOConfig)
     runtime: RuntimeConfig = field(default_factory=RuntimeConfig)
     output_dir: str = "output"
     config_path: Optional[str] = field(default=None, repr=False)
@@ -116,6 +126,18 @@ class ExperimentConfig:
             raise ValueError("dpo.beta must be positive")
         if not 0 <= self.dpo.label_smoothing < 0.5:
             raise ValueError("dpo.label_smoothing must be in [0, 0.5)")
+        if self.rollout.num_generations < 2:
+            raise ValueError("rollout.num_generations must be at least 2")
+        if not self.grpo.reward or not self.grpo.reward.strip():
+            raise ValueError("grpo.reward must be a registry name or module:function")
+        if self.grpo.clip_range <= 0:
+            raise ValueError("grpo.clip_range must be positive")
+        if self.grpo.kl_coef < 0:
+            raise ValueError("grpo.kl_coef must be non-negative")
+        if self.grpo.num_iterations < 1:
+            raise ValueError("grpo.num_iterations must be positive")
+        if self.grpo.advantage_eps <= 0:
+            raise ValueError("grpo.advantage_eps must be positive")
 
     def to_dict(self) -> Dict[str, Any]:
         payload = asdict(self)
@@ -139,6 +161,7 @@ def _construct(cls: Type[T], values: Mapping[str, Any]) -> T:
             "training": TrainingConfig,
             "dpo": DPOConfig,
             "rollout": RolloutConfig,
+            "grpo": GRPOConfig,
             "runtime": RuntimeConfig,
         }.get(item.name) if cls is ExperimentConfig else None
         kwargs[item.name] = _construct(nested_type, value) if nested_type else value

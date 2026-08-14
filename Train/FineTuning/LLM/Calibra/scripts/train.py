@@ -23,8 +23,10 @@ def main(argv=None) -> int:
     config = load_config(args.config, args.overrides)
     configure_runtime(config)
     set_seed(config.runtime.seed)
-    from calibra.data import CausalLMCollator, DPOCollator, prepare_dataset
-    from calibra.models import load_dpo_models, load_model
+    from calibra.data import CausalLMCollator, DPOCollator, prepare_dataset, prepare_prompt_dataset
+    from calibra.models import load_dpo_models, load_grpo_models, load_model
+    from calibra.rewards import resolve_reward
+    from calibra.rollout import TransformersRollout
     from calibra.trainers import AgentRLTrainer, DPOTrainer, GRPOTrainer, PPOTrainer, SFTTrainer
 
     algorithm = config.training.algorithm
@@ -42,8 +44,14 @@ def main(argv=None) -> int:
         model, tokenizer = load_model(config, trainable=True)
         return PPOTrainer(model, tokenizer, config, loss_fn=None, collator=None).train()
     elif algorithm == "grpo":
-        model, tokenizer = load_model(config, trainable=True)
-        return GRPOTrainer(model, tokenizer, config, loss_fn=None, collator=None).train()
+        policy, reference, tokenizer = load_grpo_models(config)
+        train_dataset, val_dataset = prepare_prompt_dataset(config.data, config.runtime.seed)
+        rollout = TransformersRollout(policy, tokenizer, config)
+        reward_fn = resolve_reward(config.grpo.reward)
+        trainer = GRPOTrainer(policy, reference, tokenizer, config, rollout, reward_fn)
+        output_dir = trainer.train(train_dataset, val_dataset)
+        print(f"Saved final checkpoint to {Path(output_dir).resolve()}")
+        return 0
     elif algorithm == "agent_rl":
         model, tokenizer = load_model(config, trainable=True)
         return AgentRLTrainer(model, tokenizer, config, loss_fn=None, collator=None).train()

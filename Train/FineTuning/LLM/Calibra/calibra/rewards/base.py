@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Any, Callable, Iterable
 
 
@@ -8,7 +9,10 @@ class Reward:
         self.fn, self.name = fn, name
 
     def __call__(self, sample: Any) -> float:
-        return float(self.fn(sample))
+        value = float(self.fn(sample))
+        if not math.isfinite(value):
+            raise ValueError(f"Reward {self.name!r} returned a non-finite value: {value}")
+        return value
 
 
 class CompositeReward:
@@ -19,4 +23,7 @@ class CompositeReward:
             raise ValueError("rewards and weights must have equal lengths")
 
     def __call__(self, sample: Any) -> float:
-        return sum(weight * reward(sample) for reward, weight in zip(self.rewards, self.weights))
+        value = sum(weight * reward(sample) for reward, weight in zip(self.rewards, self.weights))
+        if not math.isfinite(value):
+            raise ValueError(f"Composite reward returned a non-finite value: {value}")
+        return value

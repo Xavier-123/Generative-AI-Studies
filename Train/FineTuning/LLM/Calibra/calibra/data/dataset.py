@@ -62,6 +62,18 @@ class EncodedDataset(TorchDataset):
 Dataset = EncodedDataset
 
 
+class PromptDataset(EncodedDataset):
+    """Dataset of raw prompt records used by rollout-based objectives."""
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        record = dict(super().__getitem__(index))
+        prompt = record.get("prompt")
+        if prompt is None or not str(prompt).strip():
+            raise ValueError("GRPO records require a non-empty prompt field")
+        record["prompt"] = str(prompt)
+        return record
+
+
 def split_records(records: list[dict[str, Any]], validation_ratio: float, seed: int = 42):
     if len(records) < 2:
         raise ValueError("At least two valid samples are required for train/validation split")
@@ -74,6 +86,23 @@ def split_records(records: list[dict[str, Any]], validation_ratio: float, seed: 
         EncodedDataset([item for i, item in enumerate(records) if i not in val_indices]),
         EncodedDataset([item for i, item in enumerate(records) if i in val_indices]),
     )
+
+
+def prepare_prompt_dataset(config: DataConfig, seed: int = 42):
+    """Load and split raw prompt records for GRPO rollouts."""
+    records = load_records(config.path)
+    if not records:
+        raise ValueError(f"Dataset is empty: {config.path}")
+    normalized = []
+    for index, record in enumerate(records, 1):
+        if not isinstance(record, dict):
+            raise ValueError(f"GRPO record {index} must be an object")
+        prompt = record.get("prompt")
+        if prompt is None or not str(prompt).strip():
+            raise ValueError(f"GRPO record {index} requires a non-empty prompt field")
+        normalized.append({**record, "prompt": str(prompt)})
+    train, val = split_records(normalized, config.validation_ratio, seed)
+    return PromptDataset(train.records), PromptDataset(val.records)
 
 
 def prepare_dataset(tokenizer: Any, config: DataConfig, seed: int = 42):
