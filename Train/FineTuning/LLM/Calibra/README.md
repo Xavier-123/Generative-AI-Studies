@@ -14,6 +14,14 @@ TRAINING_MODE = 'sft'
 DATA_PATH = r'../data/sft_data_mixed_single.csv'
 ```
 
+当前 `SFTTrainer` 使用教学用的显式训练路径：项目直接按
+`(softmax(logits) - one_hot(label)) / 有效 token 数` 计算 loss 对 logits
+的梯度，并从 logits 启动 Transformer 计算图的向量-雅可比积，不调用
+`loss.backward()`。参数更新由项目内的 `ManualAdamW` 完成，包括一阶/二阶
+动量、偏置修正、解耦权重衰减、FP32 master weights、动态 loss scaling
+和全局梯度裁剪；SFT 路径不调用 `torch.optim.AdamW`。Transformer 各算子的
+局部反向仍由 PyTorch autograd 执行，以兼容任意 Hugging Face CausalLM。
+
 兼容原有 CSV：
 
 ```csv
