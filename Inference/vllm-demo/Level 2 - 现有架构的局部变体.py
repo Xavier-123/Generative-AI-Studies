@@ -9,231 +9,131 @@ Level 2: 现有架构的局部变体（微调已有模型类）
 适配权重的命名映射（Weight Name Mapping），确保 HuggingFace 权重能正确加载到对应的张量并行层中。
 难度：⭐⭐（熟悉模型结构和权重映射即可）
 
-https://aistudio.google.com/app/prompts/1EgNbayfUmgWfgbeA5_CfbP00ikpOXDSQ
+
+场景设定
+基座架构：LLaMA 结构。
+变体改动：
+    1.在 Attention 计算前，对 Query 和 Key 分别施加一个 RMSNorm（即 QK-Norm）。
+    2.HF 权重中新增了 model.layers.{i}.self_attn.q_norm.weight 和 k_norm.weight。
+目标：不重写整个 LLaMA，仅继承并覆写变动部分。
 
 '''
 
+
+
+from functools import partial
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
-from dataclasses import dataclass
+from transformers import LlamaConfig
+
+from vllm.config import VllmConfig
+from vllm.model_executor.layers.layernorm import RMSNorm
+from vllm.v1.attention.backend import AttentionType
+from .llama import LlamaAttention, LlamaDecoderLayer, LlamaForCausalLM
 
 
 # =====================================================================
-# 1. 配置类定义 (Config)
+# 1. 继承 LlamaAttention：增加 QK-Norm 并覆写 forward
 # =====================================================================
-@dataclass
-class LlamaConfig:
-    vocab_size: int = 1000
-    hidden_size: int = 64
-    num_attention_heads: int = 4
-    num_key_value_heads: int = 2  # GQA
-    intermediate_size: int = 128
-    rms_norm_eps: float = 1e-6
-    max_position_embeddings: int = 2048
-
-
-# Level 2 变体：新增配置项，支持 QK-Norm 开关
-@dataclass
-class CustomVariantConfig(LlamaConfig):
-    use_qk_norm: bool = True  # 新增超参数：是否开启 QK-Norm
-
-
-# =====================================================================
-# 2. 基础算子与已有模型基类 (Base Components)
-# =====================================================================
-class RMSNorm(nn.Module):
-    def __init__(self, dim: int, eps: float = 1e-6):
-        super().__init__()
-        self.eps = eps
-        self.weight = nn.Parameter(torch.ones(dim))
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        variance = x.pow(2).mean(-1, keepdim=True)
-        return x * torch.rsqrt(variance + self.eps) * self.weight
-
-
-class LlamaAttention(nn.Module):
-    """标准的基类 Attention"""
-
-    def __init__(self, config: LlamaConfig):
-        super().__init__()
-        self.config = config
-        self.hidden_size = config.hidden_size
-        self.num_heads = config.num_attention_heads
-        self.head_dim = self.hidden_size // self.num_heads
-        self.num_kv_heads = config.num_key_value_heads
-
-        self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim, bias=False)
-        self.k_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim, bias=False)
-        self.v_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim, bias=False)
-        self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=False)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # 简化版前向：这里只演示结构与张量流转
-        q = self.q_proj(x)
-        k = self.k_proj(x)
-        v = self.v_proj(x)
-        # 模拟 attention 输出
-        out = self.o_proj(q)
-        return out
-
-
-# =====================================================================
-# 3. 变体实现：继承与局部修改 (Level 2 核心工作)
-# =====================================================================
-class CustomVariantAttention(LlamaAttention):
-    """
-    变体 Attention：继承基类，通过超参分支插入 QK-Norm 逻辑
-    """
-
-    def __init__(self, config: CustomVariantConfig):
-        super().__init__(config)
-
-        # 针对新超参进行分支初始化
-        if config.use_qk_norm:
-            self.q_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
-            self.k_norm = RMSNorm(self.head_dim, eps=config.rms_norm_eps)
-        else:
-            self.q_norm = nn.Identity()
-            self.k_norm = nn.Identity()
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        B, S, _ = x.shape
-        q = self.q_proj(x).view(B, S, self.num_heads, self.head_dim)
-        k = self.k_proj(x).view(B, S, self.num_kv_heads, self.head_dim)
-        v = self.v_proj(x)
-
-        # 局部结构变体：对 Q 和 K 应用 Norm
-        q = self.q_norm(q).view(B, S, -1)
-        k = self.k_norm(k).view(B, S, -1)
-
-        out = self.o_proj(q)
-        return out
-
-
-class CustomVariantDecoderLayer(nn.Module):
-    def __init__(self, config: CustomVariantConfig):
-        super().__init__()
-        self.input_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        # 替换为我们修改后的变体 Attention
-        self.self_attn = CustomVariantAttention(config)
-        self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-
-        # 简化的 MLP
-        self.mlp = nn.Sequential(
-            nn.Linear(config.hidden_size, config.intermediate_size, bias=False),
-            nn.SiLU(),
-            nn.Linear(config.intermediate_size, config.hidden_size, bias=False)
+class CustomLlamaAttention(LlamaAttention):
+    def __init__(
+            self,
+            config: LlamaConfig,
+            hidden_size: int,
+            num_heads: int,
+            num_kv_heads: int,
+            max_position_embeddings: int = 8192,
+            quant_config=None,
+            bias: bool = False,
+            bias_o_proj: bool = False,
+            cache_config=None,
+            prefix: str = "",
+            attn_type: str = AttentionType.DECODER,
+    ) -> None:
+        super().__init__(
+            config=config,
+            hidden_size=hidden_size,
+            num_heads=num_heads,
+            num_kv_heads=num_kv_heads,
+            max_position_embeddings=max_position_embeddings,
+            quant_config=quant_config,
+            bias=bias,
+            bias_o_proj=bias_o_proj,
+            cache_config=cache_config,
+            prefix=prefix,
+            attn_type=attn_type,
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Residual + Pre-Norm
-        x = x + self.self_attn(self.input_layernorm(x))
-        x = x + self.mlp(self.post_attention_layernorm(x))
-        return x
+        # 增加 Q-Norm 和 K-Norm
+        # 命名为 q_norm / k_norm，以精确匹配 HF 的 model.layers.X.self_attn.q_norm.weight
+        eps = getattr(config, "rms_norm_eps", 1e-6)
+        self.q_norm = RMSNorm(self.head_dim, eps=eps)
+        self.k_norm = RMSNorm(self.head_dim, eps=eps)
 
+    def forward(
+            self,
+            positions: torch.Tensor,
+            hidden_states: torch.Tensor,
+    ) -> torch.Tensor:
+        # 1. QKV 投影
+        qkv, _ = self.qkv_proj(hidden_states)
+        q, k, v = qkv.split([self.q_size, self.kv_size, self.kv_size], dim=-1)
 
-class CustomVariantForCausalLM(nn.Module):
-    def __init__(self, config: CustomVariantConfig):
-        super().__init__()
-        self.config = config
-        self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size)
-        self.layers = nn.ModuleList([CustomVariantDecoderLayer(config) for _ in range(2)])
-        self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        # 2. QK-Norm：reshape 到 head 维度做 norm，再还原形状
+        # q: [num_tokens, num_heads, head_dim] -> norm -> [num_tokens, q_size]
+        q = self.q_norm(q.view(-1, self.num_heads, self.head_dim)).view(-1, self.q_size)
+        k = self.k_norm(k.view(-1, self.num_kv_heads, self.head_dim)).view(-1, self.kv_size)
 
-    def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
-        x = self.embed_tokens(input_ids)
-        for layer in self.layers:
-            x = layer(x)
-        x = self.norm(x)
-        logits = self.lm_head(x)
-        return logits
+        # 3. RoPE 旋转位置编码
+        q, k = self.rotary_emb(positions, q, k)
 
-    # =====================================================================
-    # 4. 权重命名映射与加载器 (Weight Name Mapping & Loading)
-    # =====================================================================
-    def load_weights(self, hf_state_dict: Dict[str, torch.Tensor]):
-        """
-        处理 Hugging Face 权重名与当前推理模型变量名之间的映射
-        """
-        # 定义规则：HF Key 规则 -> 推理模型内部 Key
-        # 例如 HF checkpoint 中通常带 "model." 前缀，以及特定的命名差异
-        name_mapping = {
-            "model.embed_tokens.weight": "embed_tokens.weight",
-            "model.norm.weight": "norm.weight",
-            "lm_head.weight": "lm_head.weight",
-        }
+        # 4. Attention 算子
+        attn_output = self.attn(q, k, v)
 
-        # 构造用于本模型的权重字典
-        custom_state_dict = {}
-        for hf_key, tensor in hf_state_dict.items():
-            # 1. 匹配全局命名
-            if hf_key in name_mapping:
-                custom_state_dict[name_mapping[hf_key]] = tensor
-                continue
-
-            # 2. 匹配 Layer 内部命名 (正则/前缀替换)
-            if hf_key.startswith("model.layers."):
-                # 剥离 "model." 前缀: model.layers.0.xxx -> layers.0.xxx
-                internal_key = hf_key.replace("model.layers.", "layers.")
-
-                # 假设 HF 里把 q_norm 命名为 "q_layernorm"，这里做个映射适配
-                internal_key = internal_key.replace("self_attn.q_layernorm.", "self_attn.q_norm.")
-                internal_key = internal_key.replace("self_attn.k_layernorm.", "self_attn.k_norm.")
-
-                custom_state_dict[internal_key] = tensor
-
-        # 3. 校验并加载权重
-        missing_keys, unexpected_keys = self.load_state_dict(custom_state_dict, strict=False)
-        print(" [Weight Loading] 权重加载完成:")
-        print(f"   Missing keys: {missing_keys}")
-        print(f"   Unexpected keys: {unexpected_keys}")
+        # 5. Output 投影
+        output, _ = self.o_proj(attn_output)
+        return output
 
 
 # =====================================================================
-# 5. 模拟验证 (Mock & Test)
+# 2. 继承 LlamaDecoderLayer：注入自定义的 Attention
 # =====================================================================
-if __name__ == "__main__":
-    print("=== 1. 初始化模型与配置 ===")
-    config = CustomVariantConfig(
-        vocab_size=100,
-        hidden_size=32,
-        num_attention_heads=4,
-        num_key_value_heads=2,
-        intermediate_size=64,
-        use_qk_norm=True
-    )
-    model = CustomVariantForCausalLM(config)
+class CustomLlamaDecoderLayer(LlamaDecoderLayer):
+    def __init__(
+            self,
+            vllm_config: VllmConfig,
+            prefix: str = "",
+            config: LlamaConfig | None = None,
+    ) -> None:
+        # 通过父类的 attn_layer_type 注入自定义 Attention
+        super().__init__(
+            vllm_config=vllm_config,
+            prefix=prefix,
+            config=config,
+            attn_layer_type=CustomLlamaAttention,
+        )
 
-    print("\n=== 2. 模拟从 HuggingFace 传来的原始权重字典 ===")
-    # 模拟 HF checkpoints 中的命名结构（包含 model. 前缀和自定义 layer norm 名称）
-    mock_hf_state_dict = {
-        "model.embed_tokens.weight": torch.randn(100, 32),
-        "model.layers.0.input_layernorm.weight": torch.ones(32),
-        "model.layers.0.self_attn.q_proj.weight": torch.randn(32, 32),
-        "model.layers.0.self_attn.k_proj.weight": torch.randn(16, 32),
-        "model.layers.0.self_attn.v_proj.weight": torch.randn(16, 32),
-        "model.layers.0.self_attn.o_proj.weight": torch.randn(32, 32),
-        # 变体专有权重在 HF 中的名字：
-        "model.layers.0.self_attn.q_layernorm.weight": torch.ones(8),  # head_dim = 32//4 = 8
-        "model.layers.0.self_attn.k_layernorm.weight": torch.ones(8),
-        "model.layers.0.post_attention_layernorm.weight": torch.ones(32),
-        "model.layers.0.mlp.0.weight": torch.randn(64, 32),
-        "model.layers.0.mlp.2.weight": torch.randn(32, 64),
-        "model.norm.weight": torch.ones(32),
-        "lm_head.weight": torch.randn(100, 32),
-    }
 
-    print("\n=== 3. 运行适配后的权重加载器 ===")
-    model.load_weights(mock_hf_state_dict)
+# =====================================================================
+# 3. 继承 LlamaForCausalLM：注入自定义的 DecoderLayer
+# =====================================================================
+class CustomLlamaForCausalLM(LlamaForCausalLM):
+    """
+    顶层模型类：由于父类在 __init__ 中支持 layer_type，直接使用 partial 绑定默认参数即可
+    """
 
-    print("\n=== 4. 前向传播测试 ===")
-    mock_inputs = torch.tensor([[1, 5, 23, 8]], dtype=torch.long)  # Batch=1, SeqLen=4
-    outputs = model(mock_inputs)
-    print(f"输入 Shape: {mock_inputs.shape}")
-    print(f"输出 Logits Shape: {outputs.shape}")  # 应为 [1, 4, 100]
+    def __init__(
+            self,
+            *,
+            vllm_config: VllmConfig,
+            prefix: str = "",
+            layer_type: type[nn.Module] = CustomLlamaDecoderLayer,
+    ):
+        super().__init__(
+            vllm_config=vllm_config,
+            prefix=prefix,
+            layer_type=layer_type,
+        )
 
-    assert outputs.shape == (1, 4, 100), "输出 Shape 不符合预期！"
-    print("\n Level 2 变体模型适配验证通过！")
+    # 注意：完全不需要重写 load_weights！
+    # 父类的 AutoWeightsLoader 会根据 self.model.layers[i].self_attn.q_norm 自动完成权重加载。
