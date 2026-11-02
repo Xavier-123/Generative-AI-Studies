@@ -87,8 +87,8 @@ __pycache__/
 *.pyc
 
 
-Agent/通用Agent框架学习/codex-learning/codex/
-Agent/通用Agent框架学习/dsh-learning/deepseek-harness/
+/Agent/通用Agent框架学习/codex-learning/codex/
+Agent/通用Agent框架学习/dsh-learning/deepseek-harness/*
 Agent/通用Agent框架学习/opencode-learning/opencode/
 Agent/通用Agent框架学习/pi-learning/pi/
 Agent/通用Agent框架学习/zcode-learning/ZCode/
