@@ -1,0 +1,41 @@
+# 简介版本
+## 项目名称：
+通信运维与客服场景的垂直大模型蒸馏与国产化推理压缩
+## 技术栈：
+PyTorch, Torch-NPU, MindSpeed, FusionAttention, Sequence-level KD, Top-K Logits KD, W8A8, MindIE
+## 项目描述：
+	主导 Qwen3-235B(MoE-Thinking) → Qwen3-32B 蒸馏、量化及昇腾全栈落地。在保留教师模型 96.2% 多步复杂推理能力的前提下，交付门槛收敛至 4卡 910B，综合算力成本降低 70%+，TTFT 压至 <300ms，P99 延迟降低 68%。
+## 核心工作：
+1.推理轨迹剪枝与高质量数据集构建：
+	基于状态机与规则过滤剔除 CoT 冗余反思死循环，结合 Seq-level KD 与 RFT 拒绝采样，精炼构建 8万条 覆盖 5GC 协议与根因定位的极简高质量 Reasoning 数据。
+2.概率分布对齐与On-Policy蒸馏：
+    自研 Top-32 Logits 离线截断与动态量化存储，单样本 I/O 降低 85%；引入 Iterative On-Policy 轨迹重打分机制，显著抑制长程推理累积误差。
+3.昇腾 910B 分布式训练与长序列优化：
+	基于 Torch-NPU + MindSpeed，集成 FusionAttention 与 Ulysses 序列并行，支持 16K 上下文端到端蒸馏，NPU 利用率提升 28%，吞吐提升 2.1倍。
+4.自适应量化与高并发低延时部署：
+	实施协议敏感型 W8A8 量化（模型降至 ~34GB，精度损耗 <0.3%）；基于 MindIE 集成 PagedAttention 与 Chunked Prefill，TTFT 降低 45%，推理吞吐提升 3.2倍。
+
+
+# 详细描述
+## 项目名称：
+通信运维与客服场景的垂直大模型蒸馏与压缩
+## 技术栈：
+PyTorch, Torch-NPU, MindSpeed, FusionAttention, Sequence-level KD, Top-K Logits KD, W8A8 (AWQ), MindIE
+# 项目描述：
+	针对通信核心网故障归因、跨域拓扑排障、复杂协议解析等高难度推理场景中，235B级长思维链Teacher模型在私有化部署环境下面临显存占用高、推理延迟高及并发能力不足等问题，负责搭建 Qwen3-235B-A22B-Thinking → Qwen3-32B 的领域推理能力蒸馏、量化压缩及昇腾NPU部署方案。
+	项目围绕 Thinking-CoT 提纯、Sequence/Logits KD、长序列分布式训练及 W8A8 量化部署进行全栈优化。最终在核心网评测集上达成 235B 教师模型 96.2% 的复杂推理能力逼近；交付门槛由超大集群收敛至单实例 4 卡 910B 交付，综合算力成本降低 70%+，首字响应延迟（TTFT）压至毫秒级（<300ms），单请求 P99 延迟降低 68%，实现低延迟、高并发的企业级私有化高效交付。
+## 硬件信息：
+训练：2 台 8 卡 910B 64GB（共 16 卡）；交付部署：4 卡 910B 64GB
+## 核心工作：
+1.Thinking-CoT提纯与结构化数据蒸馏：
+	- 无效推理轨迹剪枝：针对 235B-Thinking 教师模型生成的超长推理轨迹（<think>...</think>），设计基于规则与通信拓扑状态机的过滤算法，剔除幻觉自省、死循环反思等冗余 Token，提纯出高信息密度的“通信排障黄金思维链”；
+	- 高质量语料构建：采用 Sequence-level KD 结合拒绝采样微调（RFT），构建 40 万条覆盖 5GC 核心网协议解析、跨域告警根因定位的高质量结构化思维链数据集。
+2.跨架构概率分布与策略对齐（Logits & Distribution Alignment）：
+	- Top-K Logits 离线流式缓存：针对 235B-A22B 混合专家（MoE）教师模型在线前向开销大的痛点，自研 Top-32 Logits 离线截断与动态量化存储策略，单样本 I/O 开销降低 85%，显著加速学生模型训练；
+	- 迭代式策略蒸馏（Iterative On-Policy KD）：为缓解多步长推理的累积误差（Exposure Bias），引入分批迭代机制，在学生模型自回归生成的轨迹上由教师模型进行判别与重打分，显著抑制长思维链推理中的“偏航分支”。
+3.昇腾 910B 分布式训练与长序列加速：
+    - 国产算力分布式适配：采用 Torch-NPU + MindSpeed 分布式训练框架，深度集成昇腾原生 FusionAttention 算子 与 MindSpeed 优化套件；
+    - 长上下文显存优化：结合重计算（Activation Checkpointing）与 Sequence Parallel（MindSpeed-Ulysses），成功支持 16K 超长排障上下文的端到端蒸馏训练，NPU 算力利用率提升 28%，训练吞吐提升 2.1 倍。
+4.领域自适应量化与高并发低延时部署：
+    - 通信场景自适应量化：针对通信协议参数与网元拓扑特征构建敏感激活校准集，实施 W8A8 权重量化，将 32B 学生模型单实例权重压缩至 ~34GB，在达成近乎无损（PPL 损失 <0.01，任务准确率衰减 <0.3%）的前提下，单张 64GB 显卡可预留 30GB+ 动态显存，支撑多路 16K 超长上下文的并发推理；
+	- 生产级推理调优：基于 MindIE 部署引擎，启用 PagedAttention 与 Chunked Prefill，结合通信运维固定 Prompt 模板实施 Prompt Caching，首字延迟（TTFT）降低 45%，单节点推理吞吐提升 3.2 倍。
