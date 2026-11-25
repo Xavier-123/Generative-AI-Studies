@@ -1,8 +1,21 @@
 # 导入依赖库
+import os
+
 from openai import OpenAI
 
+
+def require_env(name: str) -> str:
+    """读取密钥环境变量；未设置时报错退出，密钥不再硬编码进代码"""
+    value = os.getenv(name)
+    if not value:
+        raise SystemExit(
+            f"请先设置环境变量 {name}，例如：setx {name} \"你的密钥\" 后重新打开终端运行"
+        )
+    return value
+
+
 # ===================== 配置区（请修改这里） =====================
-OPENAI_API_KEY = "ms-5e8ac3d3-3104-47b9-bf52-e96706571e23"
+OPENAI_API_KEY = require_env("MODELSCOPE_API_KEY")
 OPENAI_BASE_URL = "https://api-inference.modelscope.cn/v1"
 # MODEL_NAME = "Qwen/Qwen3.5-35B-A3B"
 MODEL_NAME = "Qwen/Qwen3.5-397B-A17B"
@@ -21,10 +34,34 @@ def calculator(expression: str) -> str:
     :return: 计算结果
     """
     try:
-        # 安全计算简单表达式
-        result = eval(expression)
+        # AST 白名单求值：仅允许数字与四则运算，替代裸 eval 防代码注入
+        import ast
+        import operator
+
+        _BINOPS = {
+            ast.Add: operator.add,
+            ast.Sub: operator.sub,
+            ast.Mult: operator.mul,
+            ast.Div: operator.truediv,
+            ast.Mod: operator.mod,
+            ast.Pow: operator.pow,
+        }
+
+        def _ev(node):
+            if isinstance(node, ast.Expression):
+                return _ev(node.body)
+            if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+                return node.value
+            if isinstance(node, ast.BinOp) and type(node.op) in _BINOPS:
+                return _BINOPS[type(node.op)](_ev(node.left), _ev(node.right))
+            if isinstance(node, ast.UnaryOp) and isinstance(node.op, (ast.UAdd, ast.USub)):
+                sign = 1 if isinstance(node.op, ast.UAdd) else -1
+                return sign * _ev(node.operand)
+            raise ValueError("仅支持数字与 + - * / % ** 运算")
+
+        result = _ev(ast.parse(expression, mode="eval"))
         return f"计算结果：{result}"
-    except:
+    except Exception:
         return "计算失败，请输入合法的数学表达式"
 
 

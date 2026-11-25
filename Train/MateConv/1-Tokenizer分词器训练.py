@@ -2,9 +2,14 @@
 '''
 1. 准备训练数据
 '''
+import os
 import random
 import pandas as pd
+from pathlib import Path
+
 csv_paths = ["E:/dataset/AI-ModelScope/alpaca-gpt4-data-zh/train.csv", "E:/dataset/AI-ModelScope/alpaca-gpt4-data-en/train.csv"]
+
+
 texts = []
 
 for csv_path in csv_paths:
@@ -30,9 +35,10 @@ for csv_path in csv_paths:
 random.seed(41)
 random.shuffle(texts)
 
-with open("corpus.txt", "w", encoding="utf-8") as f:
-    for line in texts:
-        f.write(line.lstrip("\n").rstrip("\n") + "\n")
+corpus_content = "\n".join(t.lstrip("\n").rstrip("\n") for t in texts) + "\n"
+Path("E:/LLM/7-Study/Generative-AI-Studies/Train/MateConv/corpus.txt").write_text(
+    corpus_content, encoding="utf-8"
+)
 
 '''
 2. 训练分词器代码实例

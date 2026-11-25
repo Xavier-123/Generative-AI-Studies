@@ -1,7 +1,20 @@
+import os
+
 from openai import OpenAI
 
+
+def require_env(name: str) -> str:
+    """读取密钥环境变量；未设置时报错退出，密钥不再硬编码进代码"""
+    value = os.getenv(name)
+    if not value:
+        raise SystemExit(
+            f"请先设置环境变量 {name}，例如：setx {name} \"你的密钥\" 后重新打开终端运行"
+        )
+    return value
+
+
 # ===================== 配置区（请修改这里） =====================
-OPENAI_API_KEY = "ms-5e8ac3d3-3104-47b9-bf52-e96706571e23"
+OPENAI_API_KEY = require_env("MODELSCOPE_API_KEY")
 OPENAI_BASE_URL = "https://api-inference.modelscope.cn/v1"
 MODEL_NAME = "Qwen/Qwen3.5-397B-A17B"
 

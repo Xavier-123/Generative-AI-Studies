@@ -1,4 +1,6 @@
 import asyncio
+import os
+
 from ms_agent import LLMAgent
 
 # 1. 配置魔搭上的远程 MCP 服务（可以配置多个服务）
@@ -12,7 +14,7 @@ mcp_config = {
             "command": "npx",
             "args": ["-y", "tavily-mcp@0.1.4"],
             "env": {
-                "TAVILY_API_KEY": "tvly-dev-xxxxxxxxxx"
+                "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY", "")
             },
             "disabled": False,
             "autoApprove": []
